@@ -1,0 +1,105 @@
+---
+title: EMQA — Estação de Monitoramento de Qualidade Ambiental
+summary: Estação de baixo custo com ESP32-S3 e sete sensores que mede gases, material particulado, ruído e UV, com servidor Flask e dashboard Vue em tempo real. Testada em dois pontos de Curitiba.
+domain: iot
+stack: [ESP32-S3, C++, Arduino, Python, Flask, Vue.js, PrimeVue, EasyEDA]
+year: '2025'
+period: 05/2025 – 06/2025
+status: done
+context: Oficina de Integração 1, Engenharia da Computação, UTFPR
+role: Firmware embarcado — leitura e calibração dos sensores, bibliotecas próprias, código unificado e envio dos dados ao servidor.
+team:
+  - { name: Felipe Sledz Ferreira }
+  - { name: Gabriel Arriello Santana, github: gabriel-arriello }
+repos:
+  - { label: RomuaIdo/EMQA, url: 'https://github.com/RomuaIdo/EMQA' }
+  - { label: gabriel-arriello/emqa-estacao-qualidade-ambiental, url: 'https://github.com/gabriel-arriello/emqa-estacao-qualidade-ambiental' }
+order: 4
+---
+
+## Contexto e problema
+
+Estações oficiais de qualidade do ar são caras e esparsas. A EMQA é uma estação de baixo custo para pesquisa em ambiente urbano, que mede ao mesmo tempo qualidade do ar, ruído e radiação ultravioleta e mostra os dados em tempo real em uma página web na rede local.
+
+Parâmetros medidos: temperatura e umidade, PM<sub>2,5</sub> e PM<sub>10</sub>, CO, CO<sub>2</sub>, NO<sub>2</sub>, O<sub>3</sub>, compostos orgânicos voláteis (VOCs), nível sonoro e índice UV.
+
+## Arquitetura e decisões técnicas
+
+```ascii title="Fluxo de dados"
+ PMS5003    (UART) --+
+ MiCS-4514  (ADC)  --+
+ MQ131      (ADC)  --+      +-----------------+   Wi-Fi, POST /dados
+ SGP30      (I2C)  --+----> | ESP32-S3 N16R8  | ---------------------+
+ GUVA-S12SD (ADC)  --+      | leitura e JSON  |                      |
+ DHT22             --+      +-----------------+                      v
+ MAX9814    (ADC)  --+                                   +---------------------+
+                                                         | Flask :5000         |
+ +-------------------------+   GET /dados, /historico    | data/*.json         |
+ | Vue + PrimeVue          | <-------------------------- +---------------------+
+ | cards e gráficos        |   polling a cada 10 s
+ +-------------------------+
+```
+
+**Um microcontrolador, muitos sensores.** O ESP32-S3-DevKitC-1 N16R8 foi escolhido pelo Wi-Fi integrado e pelo número de entradas analógicas e interfaces seriais (`UART`, `I2C`) necessárias para sete sensores.
+
+**PCB caseira.** Com tantos sensores, ligações em protoboard não eram confiáveis. A placa foi desenhada no EasyEDA e fabricada manualmente pela equipe, mais rápida e barata que encomendar fora.
+
+**Fluxo de ar forçado.** Uma ventoinha de 5 V puxa ar pela frente do gabinete e o expele pela base, passando pelos sensores. O sensor UV fica no topo, exposto ao sol, e o DHT22 na lateral, longe do calor da placa.
+
+**Servidor local em vez de nuvem.** O back-end Flask roda em um computador da rede e guarda os dados em JSON; o front-end consulta a API a cada 10 segundos. Menos dependências para um protótipo de disciplina.
+
+## Implementação
+
+O firmware, em C++ na Arduino IDE, usa bibliotecas diferentes conforme o sensor:
+
+| Sensor | Grandeza | Biblioteca |
+|---|---|---|
+| PMS5003 | PM<sub>2,5</sub>, PM<sub>10</sub> | própria, a partir do datasheet |
+| MiCS-4514 | CO, NO<sub>2</sub> | própria, a partir do datasheet |
+| MAX9814 | nível sonoro | própria, a partir do datasheet |
+| MQ131 | O<sub>3</sub> | open source (Olivier Staquet), adaptada para o ESP32 |
+| GUVA-S12SD | UV | open source (Kohei Matsushita), adaptada para o ESP32 |
+| SGP30 | CO<sub>2</sub>, VOCs | Adafruit |
+| DHT22 | temperatura, umidade | Adafruit |
+
+### Calibração dos sensores resistivos
+
+MQ131 e MiCS-4514 variam a resistência $R_S$ de forma logarítmica com a concentração. Ligados a um divisor de tensão, a concentração é estimada pela razão $R_S/R_0$, onde $R_0$ é a resistência em ar limpo:
+
+$$
+C = a \left( \frac{R_S}{R_0} \right)^{b}
+$$
+
+Sem câmara de gás controlada, os coeficientes $a$ e $b$ foram ajustados pelas curvas dos datasheets. $R_0$ é obtido em campo aberto por um algoritmo que espera a estabilização térmica e elétrica: após trinta leituras consecutivas com variação abaixo de 2,5%, a média vira $R_0$.
+
+### Nível sonoro
+
+O MAX9814 entrega um sinal analógico proporcional à pressão sonora, com controle automático de ganho, que não corresponde diretamente a decibéis. Foi aplicada uma conversão logarítmica com coeficientes estimados empiricamente contra um medidor de nível sonoro em smartphone.
+
+<MediaPlaceholder what="Foto da EMQA montada e da PCB (frente e verso)" note="Figuras 5 e 7 do artigo da equipe." />
+
+<MediaPlaceholder what="Captura do dashboard web" note="Figura 6 do artigo." />
+
+## Resultados e próximos passos
+
+Coleta de validação: 60 minutos, uma leitura a cada 10 s (cerca de 360 amostras por sensor), em 28/06/2025, área residencial do Sítio Cercado, Curitiba. Referências: AccuWeather (dados da Plume Labs) e Clima e Radar para UV.
+
+| Parâmetro | Média | Desvio padrão | Referência |
+|---|---|---|---|
+| Temperatura (°C) | 21,59 | 0,04 | 22 |
+| Umidade relativa (%) | 72,86 | 0,29 | 69 |
+| PM<sub>2,5</sub> (µg/m³) | 9,62 | 1,17 | 9 |
+| PM<sub>10</sub> (µg/m³) | 11,50 | 1,66 | 22 |
+| O<sub>3</sub> (µg/m³) | 23,25 | 1,77 | 51 |
+| NO<sub>2</sub> (µg/m³) | 12,34 | 0,14 | 11 |
+| CO (ppm) | 1,1 | 0,01 | 1,09 |
+| CO<sub>2</sub> (ppm) | 434,46 | 20,24 | – |
+| VOCs (ppb) | 37,24 | 17,89 | – |
+
+Temperatura, CO e PM<sub>2,5</sub> ficaram próximos das referências. O<sub>3</sub> e PM<sub>10</sub> divergiram mais: no caso do ozônio, provavelmente pela baixa sensibilidade do MQ131 em concentrações baixas sem calibração em laboratório. Os VOCs oscilaram bastante (±48%), o que levanta dúvidas sobre a confiabilidade do SGP30.
+
+Na comparação entre uma zona residencial e a Avenida Marechal Floriano Peixoto, a maioria dos poluentes foi maior na avenida, com destaque para NO<sub>2</sub> (11,01 → 32,58 µg/m³), VOCs (10,54 → 126,48 ppb) e ruído (44,74 → 65,68 dB).
+
+Custo total do protótipo: R$ 789,31, incluindo frete e impostos.
+
+Próximos passos: coletas mais longas e em diferentes épocas do ano (a incidência de UV foi quase nula no inverno) e calibração dos sensores de gás em atmosfera controlada.

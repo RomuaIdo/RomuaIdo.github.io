@@ -1,0 +1,105 @@
+---
+title: EMQA — Environmental Quality Monitoring Station
+summary: Low-cost ESP32-S3 station with seven sensors that measures gases, particulate matter, noise and UV, with a Flask server and a real-time Vue dashboard. Tested at two sites in Curitiba.
+domain: iot
+stack: [ESP32-S3, C++, Arduino, Python, Flask, Vue.js, PrimeVue, EasyEDA]
+year: '2025'
+period: 05/2025 – 06/2025
+status: done
+context: Oficina de Integração 1, Computer Engineering, UTFPR
+role: Embedded firmware — sensor reading and calibration, custom libraries, unified code and sending data to the server.
+team:
+  - { name: Felipe Sledz Ferreira }
+  - { name: Gabriel Arriello Santana, github: gabriel-arriello }
+repos:
+  - { label: RomuaIdo/EMQA, url: 'https://github.com/RomuaIdo/EMQA' }
+  - { label: gabriel-arriello/emqa-estacao-qualidade-ambiental, url: 'https://github.com/gabriel-arriello/emqa-estacao-qualidade-ambiental' }
+order: 4
+---
+
+## Context and problem
+
+Official air quality stations are expensive and sparse. EMQA is a low-cost station for urban research that measures air quality, noise and ultraviolet radiation at the same time and shows the data in real time on a web page on the local network.
+
+Measured parameters: temperature and humidity, PM<sub>2.5</sub> and PM<sub>10</sub>, CO, CO<sub>2</sub>, NO<sub>2</sub>, O<sub>3</sub>, volatile organic compounds (VOCs), sound level and UV index.
+
+## Architecture and technical decisions
+
+```ascii title="Data flow"
+ PMS5003    (UART) --+
+ MiCS-4514  (ADC)  --+
+ MQ131      (ADC)  --+      +-----------------+   Wi-Fi, POST /dados
+ SGP30      (I2C)  --+----> | ESP32-S3 N16R8  | ---------------------+
+ GUVA-S12SD (ADC)  --+      | reads, builds   |                      |
+ DHT22             --+      | JSON            |                      v
+ MAX9814    (ADC)  --+      +-----------------+          +---------------------+
+                                                         | Flask :5000         |
+ +-------------------------+   GET /dados, /historico    | data/*.json         |
+ | Vue + PrimeVue          | <-------------------------- +---------------------+
+ | cards and charts        |   polling every 10 s
+ +-------------------------+
+```
+
+**One microcontroller, many sensors.** The ESP32-S3-DevKitC-1 N16R8 was chosen for its built-in Wi-Fi and for the number of analog inputs and serial interfaces (`UART`, `I2C`) needed for seven sensors.
+
+**Home-made PCB.** With so many sensors, breadboard wiring was not reliable. The board was designed in EasyEDA and made by hand by the team, which was faster and cheaper than ordering it elsewhere.
+
+**Forced airflow.** A 5 V fan pulls air in through the front of the enclosure and expels it through the base, passing over the sensors. The UV sensor sits on top, exposed to the sun, and the DHT22 on the side, away from the heat of the board.
+
+**Local server instead of cloud.** The Flask back end runs on a computer on the network and stores data as JSON; the front end queries the API every 10 seconds. Fewer dependencies for a course prototype.
+
+## Implementation
+
+The firmware, in C++ on the Arduino IDE, uses different libraries depending on the sensor:
+
+| Sensor | Quantity | Library |
+|---|---|---|
+| PMS5003 | PM<sub>2.5</sub>, PM<sub>10</sub> | custom, from the datasheet |
+| MiCS-4514 | CO, NO<sub>2</sub> | custom, from the datasheet |
+| MAX9814 | sound level | custom, from the datasheet |
+| MQ131 | O<sub>3</sub> | open source (Olivier Staquet), adapted for the ESP32 |
+| GUVA-S12SD | UV | open source (Kohei Matsushita), adapted for the ESP32 |
+| SGP30 | CO<sub>2</sub>, VOCs | Adafruit |
+| DHT22 | temperature, humidity | Adafruit |
+
+### Calibration of the resistive sensors
+
+MQ131 and MiCS-4514 vary their resistance $R_S$ logarithmically with concentration. Connected to a voltage divider, the concentration is estimated from the ratio $R_S/R_0$, where $R_0$ is the resistance in clean air:
+
+$$
+C = a \left( \frac{R_S}{R_0} \right)^{b}
+$$
+
+Without a controlled gas chamber, the coefficients $a$ and $b$ were fitted from the datasheet curves. $R_0$ is obtained outdoors by an algorithm that waits for thermal and electrical stabilization: after thirty consecutive readings with variation below 2.5%, the average becomes $R_0$.
+
+### Sound level
+
+The MAX9814 outputs an analog signal proportional to sound pressure, with automatic gain control, which does not correspond directly to decibels. A logarithmic conversion was applied, with coefficients estimated empirically against a smartphone sound level meter.
+
+<MediaPlaceholder what="Photo of the assembled EMQA and the PCB (front and back)" note="Figures 5 and 7 of the team's paper." />
+
+<MediaPlaceholder what="Screenshot of the web dashboard" note="Figure 6 of the paper." />
+
+## Results and next steps
+
+Validation run: 60 minutes, one reading every 10 s (about 360 samples per sensor), on June 28, 2025, residential area of Sítio Cercado, Curitiba. References: AccuWeather (Plume Labs data) and Clima e Radar for UV.
+
+| Parameter | Mean | Standard deviation | Reference |
+|---|---|---|---|
+| Temperature (°C) | 21.59 | 0.04 | 22 |
+| Relative humidity (%) | 72.86 | 0.29 | 69 |
+| PM<sub>2.5</sub> (µg/m³) | 9.62 | 1.17 | 9 |
+| PM<sub>10</sub> (µg/m³) | 11.50 | 1.66 | 22 |
+| O<sub>3</sub> (µg/m³) | 23.25 | 1.77 | 51 |
+| NO<sub>2</sub> (µg/m³) | 12.34 | 0.14 | 11 |
+| CO (ppm) | 1.1 | 0.01 | 1.09 |
+| CO<sub>2</sub> (ppm) | 434.46 | 20.24 | – |
+| VOCs (ppb) | 37.24 | 17.89 | – |
+
+Temperature, CO and PM<sub>2.5</sub> were close to the references. O<sub>3</sub> and PM<sub>10</sub> diverged more: for ozone, probably because of the low sensitivity of the MQ131 at low concentrations without laboratory calibration. VOCs fluctuated considerably (±48%), which raises doubts about the reliability of the SGP30.
+
+In the comparison between a residential zone and Avenida Marechal Floriano Peixoto, most pollutants were higher on the avenue, notably NO<sub>2</sub> (11.01 → 32.58 µg/m³), VOCs (10.54 → 126.48 ppb) and noise (44.74 → 65.68 dB).
+
+Total prototype cost: R$ 789.31, including shipping and taxes.
+
+Next steps: longer collections at different times of the year (UV incidence was almost null in winter) and calibration of the gas sensors in a controlled atmosphere.

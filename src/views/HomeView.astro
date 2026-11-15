@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+import SignalHero from '../components/SignalHero.astro';
+import ProjectIndex from '../components/ProjectIndex.astro';
+import BenchList from '../components/BenchList.astro';
+import { site } from '../config/site';
+import { routes, type Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import { getBench, getProjects } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const projects = await getProjects(lang);
+const bench = await getBench(lang);
+---
+
+<Base>
+  <section class="pt-14 pb-10 sm:pt-20" aria-labelledby="hero-name">
+    <h1 id="hero-name" class="max-w-[16ch] text-[clamp(2.4rem,7vw,4.6rem)] leading-[1.02] font-bold tracking-[-0.025em]">
+      {site.name}
+    </h1>
+    <p class="mt-4 font-mono text-[0.8rem] text-muted [font-stretch:85%]">{t('hero.role')}</p>
+    <p class="mt-6 max-w-[60ch] text-[1.12rem] leading-relaxed">{t('hero.lede')}</p>
+    <div class="mt-10">
+      <SignalHero lang={lang} />
+      <p class="mt-2 text-sm text-muted">{t('hero.legend')}</p>
+    </div>
+  </section>
+
+  <section class="mt-10" aria-labelledby="projects">
+    <div class="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id="projects" class="text-2xl font-bold">{t('projects.title')}</h2>
+      <p class="text-muted">{t('projects.intro')}</p>
+    </div>
+    <ProjectIndex lang={lang} projects={projects} />
+  </section>
+
+  <section class="mt-20" aria-labelledby="bench">
+    <div class="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id="bench" class="text-2xl font-bold">{t('bench.title')}</h2>
+      <p class="text-muted">{t('bench.intro')}</p>
+    </div>
+    <BenchList lang={lang} entries={bench} />
+  </section>
+
+  <section class="mt-20" aria-labelledby="about">
+    <h2 id="about" class="text-2xl font-bold">{t('about.title')}</h2>
+    <dl class="mt-6 grid max-w-3xl gap-x-8 gap-y-3 sm:grid-cols-[10rem_1fr]">
+      {
+        lang === 'pt' ? (
+          <>
+            <dt class="text-muted">Graduação</dt>
+            <dd>{site.education.current.pt}, conclusão prevista em {site.education.current.expected}</dd>
+            <dt class="text-muted">PETECO</dt>
+            <dd>Bolsista desde 09/2024: extensão, pesquisa e instrutoria técnica</dd>
+            <dt class="text-muted">AP[x]</dt>
+            <dd>Projeto de extensão UTFPR + IPPUC, Task 4, desde 06/2026</dd>
+            <dt class="text-muted">Técnico</dt>
+            <dd>{site.education.previous.pt}</dd>
+          </>
+        ) : (
+          <>
+            <dt class="text-muted">Degree</dt>
+            <dd>{site.education.current.en}, expected {site.education.current.expected}</dd>
+            <dt class="text-muted">PETECO</dt>
+            <dd>Scholarship holder since 09/2024: outreach, research and technical teaching</dd>
+            <dt class="text-muted">AP[x]</dt>
+            <dd>UTFPR + IPPUC outreach project, Task 4, since 06/2026</dd>
+            <dt class="text-muted">Technician</dt>
+            <dd>{site.education.previous.en}</dd>
+          </>
+        )
+      }
+    </dl>
+    <p class="mt-6"><a href={`${routes[lang].about}/`}>{t('about.more')}</a></p>
+  </section>
+</Base>

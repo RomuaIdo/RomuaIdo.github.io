@@ -1,0 +1,29 @@
+---
+title: Drawer — component cabinet inventory
+summary: Desktop app in C++ and Qt 6 to map electronic components to the drawers of a 64-drawer cabinet, with minimum stock and pick and restock lists.
+tags: [C++17, Qt 6, SQLite, CMake]
+year: '2026'
+repos:
+  - { label: RomuaIdo/drawer, url: 'https://github.com/RomuaIdo/drawer' }
+order: 4
+---
+
+## Problem
+
+With dozens of component drawers, finding where a 10 kΩ 0805 resistor is, or how many regulators are left, became a manual search.
+
+## Solution
+
+Desktop app that represents the cabinet as blocks of drawers (4×4, 3×3 or 1×1), each drawer with a size and items.
+
+- Items with category, value and package; the same item can be in several drawers and the quantity is summed.
+- Minimum stock per item: below the limit, the drawers get a visual warning right on the cabinet drawing.
+- Pick and restock lists applied to the stock in one go.
+- Draggable blocks with grid snapping and overlap detection; multiple selection.
+- Export of the mapping to CSV and built-in electronics and mechanics tools.
+
+## Implementation
+
+C++17 with Qt 6 (Widgets, Sql and Test) and CMake. The data lives in a SQLite database in the app's data directory. The domain logic is a separate library (`drawer_core`), tested with Qt Test via `ctest`.
+
+<MediaPlaceholder what="Screenshot of the app with the cabinet and the item list" />

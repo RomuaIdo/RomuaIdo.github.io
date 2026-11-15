@@ -1,0 +1,255 @@
+@import 'tailwindcss';
+@import '@fontsource/atkinson-hyperlegible-next/400.css';
+@import '@fontsource/atkinson-hyperlegible-next/400-italic.css';
+@import '@fontsource/atkinson-hyperlegible-next/600.css';
+@import '@fontsource/atkinson-hyperlegible-next/700.css';
+@import '@fontsource-variable/martian-mono/wdth.css';
+
+/* Theme: dark by default; light when <meta name="color-scheme" content="light"> (set by ThemeToggle). */
+:root {
+  color-scheme: dark;
+
+  --bg: #15191e;
+  --surface: #1c2128;
+  --rule: #2e353f;
+  --text: #e4e0d5;
+  --muted: #9aa3ad;
+  --link: #e3b341;
+
+  /* Scope-style channel colors, one per domain. */
+  --ch1: #e3b341;
+  --ch2: #56b6c2;
+  --ch3: #d38bd9;
+  --ch4: #7ea6ee;
+
+  --grid: color-mix(in oklab, var(--text) 6%, transparent);
+
+  &:has(> head > meta[name='color-scheme'][content='light']) {
+    color-scheme: light;
+
+    --bg: #f2f3f0;
+    --surface: #e8eae6;
+    --rule: #c9cdc8;
+    --text: #1b2027;
+    --muted: #59616b;
+    --link: #8a5a00;
+
+    --ch1: #8a5a00;
+    --ch2: #0f6b77;
+    --ch3: #8b3ba8;
+    --ch4: #2f5fb8;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-rule: var(--rule);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-link: var(--link);
+  --color-ch1: var(--ch1);
+  --color-ch2: var(--ch2);
+  --color-ch3: var(--ch3);
+  --color-ch4: var(--ch4);
+
+  --font-sans: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-mono: 'Martian Mono Variable', ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    accent-color: var(--link);
+    scrollbar-color: var(--rule) var(--bg);
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--bg);
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--ch1) 35%, transparent);
+  }
+
+  a {
+    color: var(--link);
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+
+  a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  code,
+  kbd,
+  pre {
+    font-family: var(--font-mono);
+    font-stretch: 85%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Monospace tag for protocols, parts and technologies. */
+  .tag {
+    font-family: var(--font-mono);
+    font-stretch: 85%;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    letter-spacing: 0;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .ch-1 { --ch: var(--ch1); }
+  .ch-2 { --ch: var(--ch2); }
+  .ch-3 { --ch: var(--ch3); }
+  .ch-4 { --ch: var(--ch4); }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Long-form case study body. */
+  .prose {
+    max-width: 68ch;
+
+    & > * + * { margin-top: 1.1em; }
+
+    & h2 {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+      font-size: 1.45rem;
+      line-height: 1.25;
+      font-weight: 700;
+    }
+
+    & h3 {
+      margin-top: 2rem;
+      font-size: 1.12rem;
+      font-weight: 700;
+    }
+
+    & ul { list-style: square; padding-left: 1.25rem; }
+    & ol { list-style: decimal; padding-left: 1.4rem; }
+    & li + li { margin-top: 0.35em; }
+    & li::marker { color: var(--muted); }
+
+    & strong { font-weight: 700; }
+
+    & :not(pre) > code {
+      font-size: 0.82em;
+      padding: 0.08em 0.3em;
+      border-radius: 3px;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+    }
+
+    & pre {
+      font-size: 0.78rem;
+      line-height: 1.6;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      overflow-x: auto;
+      background: var(--surface) !important;
+    }
+
+    & blockquote {
+      border-left: 3px solid var(--rule);
+      padding-left: 1rem;
+      color: var(--muted);
+    }
+
+    & table {
+      width: 100%;
+      font-size: 0.9rem;
+      border-collapse: collapse;
+      display: block;
+      overflow-x: auto;
+    }
+
+    & th,
+    & td {
+      text-align: left;
+      padding: 0.45rem 0.75rem 0.45rem 0;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+
+    & th { font-weight: 600; color: var(--muted); }
+    & td.num, & th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    & .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25rem 0; }
+  }
+
+  /* Shiki dual theme: pick the token color for the active scheme. */
+  .astro-code,
+  .astro-code span {
+    color: var(--shiki-dark);
+  }
+
+  :root:has(> head > meta[name='color-scheme'][content='light']) {
+    & .astro-code,
+    & .astro-code span {
+      color: var(--shiki-light);
+    }
+  }
+
+  /* ASCII diagrams from ```ascii blocks. */
+  figure.ascii {
+    margin-block: 1.5rem;
+
+    & pre {
+      font-size: 0.74rem;
+      line-height: 1.35;
+      padding: 1rem;
+      overflow-x: auto;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 1.35em 1.35em;
+    }
+
+    & figcaption {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+  }
+}

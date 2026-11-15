@@ -1,0 +1,38 @@
+---
+title: Painel local para câmera IP com protocolo PPPP
+summary: Engenharia reversa do protocolo P2P proprietário (CS2 PPCS/PPPP sobre UDP) de uma câmera Wi-Fi para controlá-la na rede local, sem nuvem nem conta do fabricante.
+tags: [UDP, PPPP, Ghidra, JADX, Python, aarch64]
+year: '2026'
+repos:
+  - { label: RomuaIdo/cy365-local-camera, url: 'https://github.com/RomuaIdo/cy365-local-camera' }
+order: 1
+---
+
+## Contexto
+
+A câmera só funciona pelo aplicativo do fabricante, que passa por servidores P2P externos mesmo quando celular e câmera estão na mesma rede. O objetivo foi falar com a **minha** câmera, na **minha** rede, sem nuvem.
+
+## Método
+
+1. Descompilação do app Android (JADX) para localizar a biblioteca nativa `libobject_jni.so` (arm64-v8a), que embute a pilha CS2 PPCS/PPPP.
+2. Análise da biblioteca no Ghidra a partir da tabela dinâmica de símbolos (cerca de 5241 símbolos; `.symtab` ausente). Endereço no Ghidra = offset do `nm -D` + `0x100000`.
+3. Exportação das tabelas usadas pela cifra (S-box de 256 bytes e matriz de CRC) para arquivos binários e reimplementação em Python puro.
+4. Validação em três níveis: descompilação, ida e volta da cifra (1000 de 1000 entradas) e captura de pacotes contra a câmera real. O que só passou pela descompilação continua marcado como hipótese na documentação.
+
+## O que foi encontrado
+
+- Descoberta na LAN por UDP na porta 32108; servidor P2P padrão na porta 32100.
+- Cifra proprietária com realimentação sobre o byte cifrado anterior, com estado de 4 bytes derivado da chave:
+
+$$
+\mathrm{out}_i = S\big[(\mathrm{in}'_{i-1} + st[\mathrm{in}'_{i-1} \bmod 4]) \bmod 256\big] \oplus \mathrm{in}_i
+$$
+
+  onde $\mathrm{in}'_{i-1}$ é o byte cifrado anterior.
+- Cabeçalho de sessão de 4 bytes (`0xF1`, tipo, tamanho em big-endian) e um subcabeçalho `0xD1` com canal e número de sequência para dados com confirmação.
+
+## Resultado
+
+Biblioteca de protocolo e painel web local (um único HTML, sem CDN) com vídeo MJPEG ao vivo, remontagem de pacotes fora de ordem, áudio IMA ADPCM decodificado no navegador, capturas, controle de LED e infravermelho. Suítes de teste offline para cada módulo e um servidor que simula a câmera. Testado em um único modelo.
+
+Comandos que alteram a câmera (configurações, Wi-Fi, firmware) ficam fora do caminho padrão; a senha nunca é gravada em disco nem em logs.

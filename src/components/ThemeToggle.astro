@@ -1,0 +1,69 @@
+---
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const t = useTranslations(Astro.props.lang);
+---
+
+<!-- Dark is the default; the only stored override is "light". Labels switch via CSS, no JS needed. -->
+<button type="button" class="theme-toggle tag cursor-pointer hover:text-ink" data-theme-toggle>
+  <span class="to-light">
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="8" cy="8" r="3" /><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3" />
+    </svg>
+    <span class="sr-only">{t('theme.toLight')}</span>
+  </span>
+  <span class="to-dark">
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7Z" />
+    </svg>
+    <span class="sr-only">{t('theme.toDark')}</span>
+  </span>
+</button>
+
+<style>
+  .theme-toggle {
+    display: inline-grid;
+    place-items: center;
+    padding-block: 0.3rem;
+    background: none;
+  }
+  .to-dark {
+    display: none;
+  }
+  :global(:root:has(> head > meta[name='color-scheme'][content='light'])) {
+    & .to-light {
+      display: none;
+    }
+    & .to-dark {
+      display: inline;
+    }
+  }
+</style>
+
+<script>
+  // Toggles between dark (default, nothing stored) and a stored "light" override.
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]')!;
+
+  const apply = (value: string | null) => {
+    meta.content = value === 'light' ? 'light' : 'dark';
+  };
+
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+    const next = meta.content === 'light' ? null : 'light';
+    apply(next);
+    try {
+      if (next) localStorage.setItem('color-scheme', next);
+      else localStorage.removeItem('color-scheme');
+    } catch {}
+  });
+
+  // Keep other tabs in sync.
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'color-scheme') apply(e.newValue);
+  });
+</script>

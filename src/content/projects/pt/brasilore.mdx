@@ -1,0 +1,72 @@
+---
+title: Brasilore
+summary: Jogo de plataforma 2D em C++ com fases inspiradas no folclore brasileiro, construído para exercitar orientação a objetos, padrões de projeto e serialização de estado em JSON.
+domain: software
+stack: [C++17, SFML 3, nlohmann/json, Make]
+year: '2025'
+period: 04/2025 – 06/2025
+status: done
+role: Menus (novo jogo, pausa, fim de jogo), placar, salvamento de partida, tratamento de eventos em cadeia de responsabilidade, projéteis, build multiplataforma e, depois da entrega, migração para SFML 3.
+team:
+  - { name: Arthur Heberle, github: Arthur-Heberle }
+repos:
+  - { label: RomuaIdo/brasilore, url: 'https://github.com/RomuaIdo/brasilore' }
+order: 6
+---
+
+{/* TODO: confirm course name (likely Técnicas de Programação) and team credit. */}
+
+## Contexto e problema
+
+O jogo era o veículo; o objetivo era a arquitetura: uma hierarquia de classes bem definida, uso deliberado de padrões de projeto, persistência do estado do jogo e modo para um ou dois jogadores. As fases, *Floresta da Cuca* e *Pasto da Mula*, usam personagens do folclore brasileiro.
+
+## Arquitetura e decisões técnicas
+
+```ascii title="Hierarquia principal"
+ Ente
+  └── Entity
+       ├── Character ──┬── Player
+       │               └── Enemy
+       ├── Obstacle ───┬── Plataform
+       │               ├── ThornyBush
+       │               └── Honey
+       └── Projectile
+
+ Phase ──┬── CucasForest          Menu ──┬── MainMenu
+         └── MulesPasture                ├── NewGameMenu
+                                         ├── PauseMenu
+ List<T> ── EntitiesList                 ├── GameOverMenu
+                                         └── Leaderboard
+```
+
+**Singleton nos gerenciadores.** `GraphicsManager` e `CollisionManager` têm uma única instância acessada por `getInstance()`: há uma janela e um mundo de colisão por execução.
+
+**Observer na interface.** Botões e campos de texto se inscrevem em `MouseSubject` e `TextInputSubject`. O laço de eventos notifica os observadores, sem conhecer cada componente da tela.
+
+**Cadeia de responsabilidade nos eventos.** Teclado, mouse e entrada de texto são tratados por `EventHandler`s encadeados: cada um consome o evento que reconhece e repassa o resto.
+
+**Lista própria com template.** `List<T>` é uma lista encadeada genérica, especializada em `EntitiesList`, usada para percorrer entidades a cada quadro.
+
+## Implementação
+
+O estado da partida (fase, jogadores, inimigos, obstáculos, pontuação) é serializado com nlohmann/json: cada classe expõe `toJson()` e `fromJson()`, e `Game::saveGame()` grava o arquivo. O placar separa partidas de um e de dois jogadores.
+
+```cpp
+// Game.h
+json toJson() const;
+void fromJson(const json &j);
+void saveGame(const std::string &filename) const;
+void saveScoretoLeaderboard();
+```
+
+O `Makefile` detecta o sistema operacional e compila tanto no Linux quanto no Windows (MSYS2 UCRT64), ligando a SFML estaticamente ao runtime do GCC no Windows.
+
+<MediaPlaceholder what="Captura de tela de uma fase em jogo" />
+
+<MediaPlaceholder what="Captura do menu principal e do placar" />
+
+## Resultados e próximos passos
+
+- Jogo entregue com duas fases, modo para um e dois jogadores, salvamento e placar.
+- Após a entrega, o código foi migrado da SFML 2 para a SFML 3.
+- Próximo passo possível: trocar a lista encadeada própria por contêineres da biblioteca padrão onde ela não for exigência do projeto.

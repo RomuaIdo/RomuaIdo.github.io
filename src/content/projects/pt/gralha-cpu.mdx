@@ -1,0 +1,123 @@
+---
+title: Gralha — processador de 16 bits em VHDL
+summary: Microprocessador multiciclo de 16 bits com acumulador e ISA própria, projetado de baixo para cima em RTL, com testbench para cada componente e um Crivo de Eratóstenes escrito em assembly da própria ISA.
+domain: hardware
+stack: [VHDL-2008, GHDL, GTKWave, Make]
+year: '2026'
+period: 04/2026 – 06/2026
+status: done
+role: ULA, banco de registradores, datapath, unidade de controle, integração do topo (MPU), RAM com endereçamento relativo e as instruções BCC, CTZ e SLL.
+team:
+  - { name: Rafael Fernandes, github: Rafael-de-Andrade-Fernandes }
+repos:
+  - { label: RomuaIdo/gralha-cpu, url: 'https://github.com/RomuaIdo/gralha-cpu' }
+order: 3
+---
+
+{/* TODO: confirm course name (context field) and team credit. */}
+
+## Contexto e problema
+
+O objetivo era construir um processador completo em nível RTL, sem IP pronto: da ULA à unidade de controle, cada bloco com o próprio testbench, simulado no GHDL e inspecionado em forma de onda no GTKWave. O teste de aceitação foi rodar um programa não trivial escrito na ISA do próprio processador.
+
+## Arquitetura e decisões técnicas
+
+```ascii title="Datapath simplificado"
+            +-------+    17 bits    +------+
+   PC ----->|  ROM  |-------------->|  IR  |----> unidade de controle
+   ^        | 128x17|               +------+          (4 estados)
+   |        +-------+                  |
+   |                         Rx (4 bits) | constante 8/12 bits
+   |                                     v
+   |                        +----------------------+
+   |                        | banco R1..R15 (R0=0) |
+   |                        +----------+-----------+
+   |                                   |
+   |        +-----+      +-----+       v
+   +--------| ACC |<-----| ULA |<---- Rx / constante
+ (desvios)  +-----+      +-----+
+               |            |
+               v            v  C Z N OV
+        +-------------+  +----------+
+        | RAM 256x16  |  |  status  |
+        | [Rx + cte]  |  +----------+
+        +-------------+
+```
+
+**Máquina de acumulador.** Toda operação aritmética tem o acumulador como origem e destino (`ADD A,Rx`, `SUB A,Rx`). Isso reduz a instrução a um único campo de registrador e simplifica o datapath, ao custo de mais movimentações (`MOV A,Rx` / `MOV Rx,A`) no assembly.
+
+**Instrução de 17 bits.** Opcode de 5 bits e quatro formatos: registrador (`ooooo rrrr xxxxxxxx`), imediato para registrador com constante de 8 bits, imediato para a ULA com constante de 12 bits, e desvio com endereço ou deslocamento de 7 bits. Com um bit além dos 16 de dados, cabem constantes de 12 bits na própria instrução, buscada em um único acesso à ROM.
+
+**R0 fixo em zero.** O banco tem 15 registradores físicos; o endereço `0000` sempre lê zero. `MOV A, R0` zera o acumulador sem uma instrução dedicada.
+
+**Multiciclo com quatro estados.** Busca, decodificação, execução (ULA e escrita em registradores) e um quarto estado para acesso à memória e desvios. O contador de programa é escrito na busca e, se o desvio for tomado, no quarto estado.
+
+**Flags e desvios com e sem sinal.** A subtração é feita como `a + not(b) + 1` em 17 bits, de modo que o carry é o inverso do empréstimo (*not-borrow*): `C = 1` significa que não houve empréstimo. Os desvios sem sinal usam isso diretamente (`BLS`: `C = 0` ou `Z = 1`; `BCC`: `C = 0`). Os com sinal combinam `N` e `OV` (`BGT`: `N = OV` e `Z = 0`). A flag de zero é calculada só sobre os 16 bits do resultado, ignorando o bit de carry.
+
+## Implementação
+
+### ULA
+
+A ULA produz um único sinal de 17 bits do qual saem resultado e flags. A operação `CTZ` (contagem de zeros à direita) é uma cadeia de prioridade sobre os bits do operando:
+
+```vhdl
+aluout_result <= ('0' & a) + ('0' & b)                    when op = "00" else
+                 ('0' & a) + ('0' & not(b)) + 1           when op = "01" else  -- carry = not-borrow
+                 shift_left('0' & a, to_integer(b))       when op = "10" else  -- SLL
+                 to_unsigned(0, 17) when op = "11" and b(0) = '1' else         -- CTZ
+                 to_unsigned(1, 17) when op = "11" and b(1) = '1' else
+                 -- ...
+                 to_unsigned(16, 17) when op = "11" else                       -- operand = 0
+                 (others => '0');
+
+z  <= '1' when aluout_result(15 downto 0) = 0 else '0';
+ov <= '1' when (op = "00" and a(15) = b(15) and aluout_result(15) /= a(15)) or
+               (op = "01" and a(15) /= b(15) and aluout_result(15) /= a(15)) else '0';
+```
+
+### Crivo de Eratóstenes
+
+O programa preenche `RAM[i] = i` e depois zera os múltiplos de cada primo. Duas instruções próprias encurtam os laços:
+
+- `SLL A, R9` com `R9 = 9` desloca o índice nove bits à esquerda; o carry sai em 1 quando o índice chega a 128, e `BCC` encerra o preenchimento sem uma comparação.
+- `CTZ A, R1` vale 7 exatamente quando `R1 = 128`, o critério de parada da busca por primos.
+
+```asm
+popula:              ; RAM[i] = i, i = 0..127
+  MOV A, R1
+  STA [R1 + 0]
+  ADDI 1
+  MOV R1, A
+  SLL A, R9          ; carry out when i reaches 128
+  BCC popula
+
+sieve:               ; clear multiples of the current prime
+  ADD R1
+  CMPI 128
+  BGT is_prime
+  MOV R3, A
+  MOV A, R0          ; R0 is always zero
+  STA [R3 + 0]
+  MOV A, R3
+  JMP sieve
+```
+
+Ao final, as posições não nulas da RAM entre 2 e 127 são os primos.
+
+<MediaPlaceholder what="Forma de onda do GTKWave da execução do crivo" note="Captura do mpu_tb mostrando PC, estado, acumulador e escritas na RAM (configuração em mpu.gtkw)." />
+
+### Verificação
+
+Cada bloco tem testbench próprio em `tb/` (ULA, registradores, banco, PC, ROM, datapath, unidade de controle e topo). O `Makefile` analisa, elabora e roda qualquer topo no GHDL com `--std=08` e grava a forma de onda `.ghw` para o GTKWave.
+
+## Resultados e próximos passos
+
+- Processador completo simulado, executando o crivo sobre os números até 127 em uma RAM de 256 palavras.
+- 23 instruções, incluindo memória com endereçamento `[Rx + constante]` e desvios relativos com e sem sinal.
+
+Próximos passos:
+
+- Expor os primos encontrados em um barramento de saída para depuração, em vez de inspecioná-los na RAM pela forma de onda.
+- Ampliar o crivo para usar toda a RAM disponível.
+- Gerar o banco de registradores com `for ... generate` no lugar das 15 instâncias escritas à mão.
+- Montador próprio para os arquivos `.asg`.

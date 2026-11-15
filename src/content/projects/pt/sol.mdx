@@ -1,0 +1,61 @@
+---
+title: SOL — Sistema de Ocupação de Locais
+summary: Plataforma web para reserva e gestão de salas do Campus Curitiba da UTFPR, substituindo pedidos por e-mail por autoatendimento com aprovação do gestor de salas.
+domain: software
+stack: [React 19, TypeScript, Vite, React Router, Java 17, Spring Boot 3]
+year: '2026'
+period: 05/2026 – 06/2026
+status: active
+role: Regras de negócio no front-end — hierarquia de papéis, cobertura de todos os casos de uso, dashboard por papel, cadastro de projetos e mapa de calor de disponibilidade do grupo.
+team:
+  - { name: Arthur G. P. Heberle, github: Arthur-Heberle }
+  - { name: Luiz Henrique de Souza Correia }
+  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes }
+repos:
+  - { label: Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais, url: 'https://github.com/Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais' }
+order: 5
+---
+
+{/* TODO: confirm course name and team credit. */}
+
+## Contexto e problema
+
+No Campus Curitiba Sede Centro, reservar uma sala depende de e-mail ou de ir pessoalmente ao responsável. Professores, alunos de projetos e tutores não têm como ver a ocupação antes de pedir. O SOL é uma plataforma de autoatendimento: cada usuário vê a grade, solicita a reserva e o gestor de salas aprova ou rejeita.
+
+O projeto foi especificado antes de ser codificado: plano de projeto com requisitos, doze casos de uso, diagramas de classes, comunicação, estados e atividades, e dicionário de dados.
+
+## Arquitetura e decisões técnicas
+
+```ascii title="Papéis e permissões"
+ ALUNO  <  PROFESSOR  <  TUTOR  <  GESTOR
+   |           |           |          |
+   |           |           |          +-- aprova/rejeita reservas e projetos,
+   |           |           |              mantém usuários, salas e disciplinas
+   |           |           +-- registra projetos, acompanha os próprios pedidos
+   |           +-- reserva salas (dia ou semestre), acompanha os próprios pedidos
+   +-- consulta a grade; como membro de projeto, informa horários livres
+```
+
+**Papéis como hierarquia ordenada.** As permissões seguem um ranking único (`ALUNO < PROFESSOR < TUTOR < GESTOR`), então cada verificação é uma comparação, não uma lista de exceções espalhada pelas telas. Uma rota protegida declara o papel mínimo.
+
+**Front-end primeiro, com camada de serviços.** As páginas falam apenas com serviços tipados (`salaService`, `reservaService`, `projetoService`, ...). Nesta fase os serviços usam um banco simulado persistido em `localStorage`; a API em Java 17 + Spring Boot 3 está planejada e entra atrás da mesma interface, sem reescrever as telas.
+
+**Reserva diária e semestral como fluxos distintos.** A reserva de um dia pode ser consolidada direto; a semestral sempre gera uma solicitação pendente para o gestor.
+
+## Implementação
+
+Minha contribuição concentrou-se nas regras de negócio:
+
+- Correção da hierarquia de papéis e do acesso ao dashboard: o gestor gerencia todas as solicitações; professor e tutor acompanham apenas as próprias, em modo leitura. Só o gestor vê os botões de aprovar e rejeitar.
+- Cobertura de todos os casos de uso da especificação, incluindo o registro de projetos por tutores e a opção de o criador entrar como gestor do projeto.
+- Mapa de calor da disponibilidade do grupo, cruzando os horários livres informados pelos membros de um projeto.
+- Ajustes no modal de reserva (data e hora separadas) e uma migração do banco simulado que adiciona novos usuários de teste sem apagar os dados já salvos no navegador.
+
+<MediaPlaceholder what="Captura do mapa de salas com filtro e modal de reserva" />
+
+<MediaPlaceholder what="Captura do mapa de calor de disponibilidade de um projeto" />
+
+## Resultados e próximos passos
+
+- Front-end funcional com login por papel, mapa de salas, reservas diárias e semestrais, aprovação, cadastro de projetos e gestão de usuários, salas e disciplinas.
+- Próximo passo: implementar o back-end em Spring Boot 3 e substituir o banco simulado pela API real.

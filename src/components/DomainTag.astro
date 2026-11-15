@@ -1,0 +1,36 @@
+---
+import { domains, type Domain } from '../config/domains';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  domain: Domain;
+}
+
+const { lang, domain } = Astro.props;
+const d = domains[domain];
+---
+
+<span class={`domain ch-${d.ch}`}>
+  <span class="swatch" aria-hidden="true"></span>{d[lang]}
+</span>
+
+<style>
+  .domain {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+  }
+
+  /* Short square-wave glyph in the channel color. */
+  .swatch {
+    flex: none;
+    width: 1.1rem;
+    height: 0.6rem;
+    border: 1.5px solid var(--ch);
+    border-bottom: none;
+    border-left-color: transparent;
+    translate: 0 -0.05rem;
+  }
+</style>

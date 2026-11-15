@@ -1,0 +1,29 @@
+---
+title: Drawer — inventário do gaveteiro de componentes
+summary: Aplicativo desktop em C++ e Qt 6 para mapear componentes eletrônicos às gavetas de um gaveteiro de 64 gavetas, com estoque mínimo e listas de retirada e reposição.
+tags: [C++17, Qt 6, SQLite, CMake]
+year: '2026'
+repos:
+  - { label: RomuaIdo/drawer, url: 'https://github.com/RomuaIdo/drawer' }
+order: 4
+---
+
+## Problema
+
+Com dezenas de gavetas de componentes, saber onde está um resistor de 10 kΩ em 0805 ou quantos reguladores sobraram virava busca manual.
+
+## Solução
+
+Aplicativo desktop que representa o gaveteiro como blocos de gavetas (4×4, 3×3 ou 1×1), cada gaveta com tamanho e itens.
+
+- Itens com categoria, valor e encapsulamento; o mesmo item pode estar em várias gavetas e a quantidade é somada.
+- Estoque mínimo por item: abaixo do limite, as gavetas recebem um aviso visual no próprio desenho do gaveteiro.
+- Listas de retirada e reposição aplicadas ao estoque de uma vez.
+- Blocos arrastáveis com encaixe na grade e detecção de sobreposição; seleção múltipla.
+- Exportação do mapeamento para CSV e ferramentas de eletrônica e mecânica embutidas.
+
+## Implementação
+
+C++17 com Qt 6 (Widgets, Sql e Test) e CMake. Os dados ficam em um banco SQLite no diretório de dados do aplicativo. A lógica de domínio é uma biblioteca separada (`drawer_core`), testada com Qt Test via `ctest`.
+
+<MediaPlaceholder what="Captura do aplicativo com o gaveteiro e a lista de itens" />

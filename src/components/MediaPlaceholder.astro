@@ -1,0 +1,57 @@
+---
+// Explicit placeholder for media that still has to be produced or cleared for publication.
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+interface Props {
+  // What should go here, e.g. "GTKWave capture of the sieve run".
+  what: string;
+  // Optional notes: source, permission status, format.
+  note?: string;
+  ratio?: string;
+}
+
+const { what, note, ratio = '16 / 9' } = Astro.props;
+const t = useTranslations(getLangFromUrl(Astro.url));
+---
+
+<figure class="placeholder" style={`aspect-ratio:${ratio}`}>
+  <figcaption>
+    <span class="tag">{t('placeholder.media')}</span>
+    <span class="what">{what}</span>
+    {note && <span class="note">{note}</span>}
+  </figcaption>
+</figure>
+
+<style>
+  .placeholder {
+    display: grid;
+    place-items: center;
+    margin-block: 1.5rem;
+    padding: 1.25rem;
+    border: 1px dashed var(--rule);
+    border-radius: 4px;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0 10px,
+      color-mix(in oklab, var(--text) 3%, transparent) 10px 11px
+    );
+    min-height: 9rem;
+  }
+
+  figcaption {
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    text-align: center;
+    max-width: 46ch;
+  }
+
+  .what {
+    font-weight: 600;
+  }
+
+  .note {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+</style>

@@ -1,0 +1,65 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import { site } from '../config/site';
+import { routes, languages, type Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  altPath: string;
+}
+
+const { lang, altPath } = Astro.props;
+const t = useTranslations(lang);
+const r = routes[lang];
+const path = Astro.url.pathname;
+const other: Lang = lang === 'pt' ? 'en' : 'pt';
+
+const links = [
+  { href: `${r.projects}/`, match: r.projects, label: t('nav.projects') },
+  { href: `${r.bench}/`, match: r.bench, label: t('nav.bench') },
+  { href: `${r.about}/`, match: r.about, label: t('nav.about') },
+];
+---
+
+<header class="border-b border-rule">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+    <a href={r.home} class="mr-auto font-mono text-[0.8rem] text-ink no-underline [font-stretch:85%]">
+      {site.shortName}
+    </a>
+    <nav aria-label={t('nav.primary')}>
+      <ul class="flex gap-5 text-[0.95rem]">
+        {
+          links.map((l) => {
+            const current = path === l.match || path.startsWith(`${l.match}/`);
+            return (
+              <li>
+                <a
+                  href={l.href}
+                  aria-current={current ? 'page' : undefined}
+                  class:list={[
+                    'no-underline hover:underline',
+                    current ? 'text-ink underline decoration-ch1 decoration-2' : 'text-muted',
+                  ]}
+                >
+                  {l.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+    <div class="flex items-center gap-3">
+      <a
+        href={altPath}
+        hreflang={other === 'pt' ? 'pt-BR' : 'en'}
+        lang={other === 'pt' ? 'pt-BR' : 'en'}
+        class="tag no-underline hover:text-ink"
+      >
+        <span class="sr-only">{t('lang.label')}: </span>{languages[other]}
+      </a>
+      <ThemeToggle lang={lang} />
+    </div>
+  </div>
+</header>

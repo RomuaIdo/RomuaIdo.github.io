@@ -1,0 +1,117 @@
+---
+title: Cinto Alerta
+summary: Cinto vestível que detecta quedas de idosos no próprio dispositivo e aciona um cuidador pelo Telegram, sem depender do Wi-Fi da casa no lado do usuário.
+domain: embedded
+stack: [ESP32-S3, C++, PlatformIO, TinyML, BMI270, SPI, ESP-NOW, FreeRTOS, LittleFS, Telegram Bot API]
+year: '2026'
+period: 2026 · entrega final em 12/2026
+status: active
+context: Oficina de Integração 2, Engenharia da Computação, UTFPR
+role: Firmware da estação base (master) — UI web de configuração, recepção ESP-NOW, alertas via Telegram e fila de reenvio persistida em LittleFS.
+team:
+  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes }
+  - { name: Arthur Gabriel Pellegrini Heberle, github: Arthur-Heberle }
+repos:
+  - { label: RomuaIdo/belt, url: 'https://github.com/RomuaIdo/belt' }
+order: 1
+---
+
+## Contexto e problema
+
+A gravidade de uma queda em idosos depende menos do impacto e mais do **tempo até o socorro**. Quem cai sozinho em casa e não consegue levantar pode passar horas no chão. Pedir ajuda pelo celular falha justamente nos casos mais graves: perda de consciência, fratura de quadril ou o telefone em outro cômodo.
+
+O Cinto Alerta é um protótipo acadêmico em dois nós:
+
+- **Cinto** (ESP32-S3 SuperMini, bateria): lê uma IMU, classifica o movimento no próprio dispositivo e, em caso de queda, vibra e acende um LED por alguns segundos antes de enviar o alerta.
+- **Base** (ESP32-S3-DevKitC-1 N16R8, na tomada): recebe o alerta por ESP-NOW e notifica cuidadores pelo Telegram.
+
+Não é um dispositivo médico: não há validação clínica e os dados de treino vêm de quedas simuladas por adultos jovens.
+
+## Arquitetura e decisões técnicas
+
+```ascii title="Visão geral do sistema"
++--------------------+   ESP-NOW (rádio direto)  +----------------------+
+|       CINTO        | ------------------------> |         BASE         |
+| ESP32-S3 SuperMini |   Alert / AlertAck        | ESP32-S3 N16R8       |
+| BMI270 (SPI, FIFO) |                           | AP+STA, portal web   |
+| 1D CNN (TinyML)    |                           | fila em LittleFS     |
++--------------------+                           +----------+-----------+
+                                                            | HTTPS
+                                                            v
+                                                  +-------------------+
+                                                  |   Telegram Bot    | --> cuidador
+                                                  +-------------------+
+```
+
+**Cintura, não pulso.** A ideia inicial era um relógio. O pulso se move independentemente do corpo: bater a mão na mesa, aplaudir ou tirar o relógio produzem assinaturas parecidas com uma queda. A cintura acompanha o centro de massa e só se move de verdade quando o corpo todo se move.
+
+**Janela de cancelamento.** Distinguir “caiu” de “sentou rápido no sofá” ainda não é um problema resolvido. A janela transforma um falso alarme crítico em um toque de botão, e cada cancelamento é um exemplo real de “não foi queda” para melhorar o modelo.
+
+**ESP-NOW em vez do Wi-Fi da casa.** O cinto fala direto com a base. Como só a base conhece o canal do roteador, o pareamento começa no cinto, que varre os canais 1 a 13 com `PairRequest` em broadcast e trava no canal em que ouviu a base. A base só grava o cinto depois de um `PairConfirm`.
+
+**IMU via SPI com FIFO.** A IMU em uso é a Bosch **BMI270**, lida por `SPI` com interrupção de FIFO: o sensor acumula amostras e o ESP32-S3 lê em rajadas, em vez de acordar a cada amostra. A integração está feita localmente e ainda não foi publicada; o repositório público ainda contém o driver anterior, de MPU-6050 via `I2C`.
+
+**Base sempre disponível.** A base roda em modo AP+STA: mantém a própria rede (`CintoAlerta-Master`) para configuração pelo celular e, ao mesmo tempo, se conecta ao roteador para falar com o Telegram.
+
+## Implementação
+
+Minha parte é o firmware da base, um projeto PlatformIO (framework Arduino) organizado por responsabilidade:
+
+| Camada | Responsabilidade |
+|---|---|
+| `App/AppController` | Coordena Wi-Fi, NTP, fila de alertas, envio ao Telegram e portal |
+| `Web/WebPortal` | Servidor HTTP e API da página de configuração, servida a partir do LittleFS |
+| `Network/EspNowTransceiver`, `PairingService` | Recepção ESP-NOW e máquina de pareamento |
+| `Messaging/TelegramTask` | Envio assíncrono em tasks do FreeRTOS (até 2 simultâneas) |
+| `Storage/CallQueueStorage`, `ConfigStorage` | Fila de reenvio e `config.json` persistidos em LittleFS |
+
+### Protocolo
+
+Todo quadro começa com um cabeçalho empacotado de 7 bytes, compartilhado entre cinto e base:
+
+```cpp
+#pragma pack(push, 1)
+struct Header {
+    uint32_t magic;     // 0x42454C54, "BELT"
+    MessageType type;   // PairRequest, PairWait, PairAccept, PairConfirm, Alert, AlertAck
+    uint16_t seq;       // replies echo the seq they answer
+};
+#pragma pack(pop)
+```
+
+Quadros com `magic`, tipo ou tamanho inesperados são descartados. O cinto reenvia um `Alert` com o mesmo `seq` até receber o `AlertAck` correspondente.
+
+### Fila de reenvio
+
+Cada alerta vira um arquivo em `/queue` no LittleFS antes de qualquer tentativa de envio, então uma queda de energia não perde a ocorrência. Na inicialização, arquivos corrompidos ou já entregues são removidos. Falhas de rede e respostas HTTP 5xx ou 429 são reenviadas com backoff exponencial:
+
+$$
+d_0 = 5\,\text{s}, \qquad d_{n+1} = \min(2\,d_n,\; 300\,\text{s})
+$$
+
+Respostas 400 ou 403 descartam apenas o chat afetado, sem bloquear os demais destinatários.
+
+### Testes
+
+Domínio, armazenamento, rede e mensagens têm suítes Unity executadas na placa (`pio test`), incluindo testes de persistência que escrevem na flash e testes de reinicialização. A interface web pode ser aberta sem hardware com `?mock`, que simula a API do firmware.
+
+<MediaPlaceholder what="Foto do protótipo: cinto e estação base" note="Foto de bancada a ser adicionada." />
+
+<MediaPlaceholder what="Captura da página de configuração no celular" note="Print do portal servido pela base (192.168.4.1)." ratio="9 / 16" />
+
+## Resultados e próximos passos
+
+Projeto em andamento, com entrega final em 12/2026. Métricas ainda não publicadas:
+
+| Métrica | Valor |
+|---|---|
+| Acurácia / sensibilidade do modelo (SisFall) | _a definir_ |
+| Latência queda → mensagem no Telegram | _a definir_ |
+| Autonomia da bateria do cinto | _a definir_ |
+
+Próximos passos:
+
+- Publicar a integração do BMI270 (SPI + FIFO) no repositório.
+- Treinar e embarcar a 1D CNN treinada no dataset SisFall no cinto.
+- Implementar o heartbeat: um cinto sem bateria, travado ou fora de alcance é indistinguível de um idoso que está bem. A base deve avisar o cuidador quando os sinais pararem, com mensagem distinta de uma queda.
+- Pareamento pelo botão do cinto; hoje o registro é manual pelo endereço MAC no portal.

@@ -1,0 +1,106 @@
+---
+import 'katex/dist/katex.min.css';
+import { render, type CollectionEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import DomainTag from '../components/DomainTag.astro';
+import Figure from '../components/Figure.astro';
+import MediaPlaceholder from '../components/MediaPlaceholder.astro';
+import { routes, type Lang } from '../i18n/ui';
+import { benchHref, entrySlug, projectHref, useTranslations } from '../i18n/utils';
+
+// Renders either a project case study or a bench log.
+type Props =
+  | { lang: Lang; kind: 'projects'; entry: CollectionEntry<'projects'> }
+  | { lang: Lang; kind: 'bench'; entry: CollectionEntry<'bench'> };
+
+const { lang, kind, entry } = Astro.props;
+const t = useTranslations(lang);
+const { Content } = await render(entry);
+const slug = entrySlug(entry.id);
+const other: Lang = lang === 'pt' ? 'en' : 'pt';
+const altPath = kind === 'projects' ? projectHref(other, slug) : benchHref(other, slug);
+const backHref = kind === 'projects' ? `${routes[lang].projects}/` : `${routes[lang].bench}/`;
+const p = kind === 'projects' ? entry.data : null;
+const repos = entry.data.repos;
+const statusKey = p ? (`status.${p.status}` as const) : null;
+const chips: string[] = kind === 'projects' ? entry.data.stack : entry.data.tags;
+---
+
+<Base title={entry.data.title} description={entry.data.summary} alternatePath={altPath}>
+  <article class="pt-10 sm:pt-14">
+    <p class="text-sm"><a href={backHref}>{kind === 'projects' ? t('case.back') : t('case.backBench')}</a></p>
+
+    <header class="mt-6 max-w-4xl">
+      {p && <DomainTag lang={lang} domain={p.domain} />}
+      <h1 class="mt-3 text-[clamp(2rem,5vw,3.2rem)] leading-[1.08] font-bold tracking-[-0.02em]">{entry.data.title}</h1>
+      <p class="mt-4 max-w-[62ch] text-[1.12rem] leading-relaxed">{entry.data.summary}</p>
+      <ul class="mt-5 flex flex-wrap gap-1.5">
+        {chips.map((s) => <li class="tag">{s}</li>)}
+      </ul>
+    </header>
+
+    <div class="mt-10 grid gap-10 lg:grid-cols-[1fr_16rem]">
+      <div class="prose min-w-0">
+        <Content components={{ Figure, MediaPlaceholder }} />
+      </div>
+
+      <aside class="order-first border-y border-rule py-4 text-[0.92rem] lg:order-none lg:self-start lg:border-y-0 lg:border-l lg:py-0 lg:pl-6">
+        <dl class="grid gap-y-3">
+          {
+            p && (
+              <>
+                <div>
+                  <dt class="text-muted">{t('case.role')}</dt>
+                  <dd>{p.role}</dd>
+                </div>
+                {p.team.length > 0 && (
+                  <div>
+                    <dt class="text-muted">{t('case.team')}</dt>
+                    <dd>
+                      <ul>
+                        {p.team.map((m) => (
+                          <li>{m.github ? <a href={`https://github.com/${m.github}`}>{m.name}</a> : m.name}</li>
+                        ))}
+                      </ul>
+                    </dd>
+                  </div>
+                )}
+                {p.context && (
+                  <div>
+                    <dt class="text-muted">{t('case.context')}</dt>
+                    <dd>{p.context}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt class="text-muted">{t('case.period')}</dt>
+                  <dd>{p.period ?? p.year}</dd>
+                </div>
+                {statusKey && (
+                  <div>
+                    <dt class="text-muted">{t('case.status')}</dt>
+                    <dd>{t(statusKey)}</dd>
+                  </div>
+                )}
+              </>
+            )
+          }
+          {
+            repos.length > 0 && (
+              <div>
+                <dt class="text-muted">{repos.length > 1 ? t('case.repos') : t('case.repo')}</dt>
+                <dd>
+                  <ul>
+                    {repos.map((r) => (
+                      <li class="break-all"><a href={r.url} class="font-mono text-[0.78rem] [font-stretch:85%]">{r.label}</a></li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )
+          }
+        </dl>
+        <p class="mt-5"><a href={altPath} hreflang={other === 'pt' ? 'pt-BR' : 'en'}>{t('case.otherLang')}</a></p>
+      </aside>
+    </div>
+  </article>
+</Base>

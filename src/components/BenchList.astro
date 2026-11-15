@@ -1,0 +1,32 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import type { Lang } from '../i18n/ui';
+import { benchHref, entrySlug } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  entries: CollectionEntry<'bench'>[];
+}
+
+const { lang, entries } = Astro.props;
+---
+
+<ul class="divide-y divide-rule border-y border-rule">
+  {
+    entries.map((e) => (
+      <li class="grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[1fr_auto]">
+        <div>
+          <a href={benchHref(lang, entrySlug(e.id))} class="font-semibold text-ink no-underline hover:underline hover:decoration-link">
+            {e.data.title}
+          </a>
+          <p class="mt-1 max-w-[60ch] text-[0.92rem] text-muted">{e.data.summary}</p>
+        </div>
+        <ul class="flex flex-wrap content-start gap-1 sm:justify-end">
+          {e.data.tags.map((tag) => (
+            <li class="tag">{tag}</li>
+          ))}
+        </ul>
+      </li>
+    ))
+  }
+</ul>

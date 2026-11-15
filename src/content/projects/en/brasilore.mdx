@@ -1,0 +1,72 @@
+---
+title: Brasilore
+summary: 2D platformer in C++ with levels inspired by Brazilian folklore, built to exercise object orientation, design patterns and JSON state serialization.
+domain: software
+stack: [C++17, SFML 3, nlohmann/json, Make]
+year: '2025'
+period: 04/2025 – 06/2025
+status: done
+role: Menus (new game, pause, game over), leaderboard, game saving, chain-of-responsibility event handling, projectiles, cross-platform build and, after delivery, migration to SFML 3.
+team:
+  - { name: Arthur Heberle, github: Arthur-Heberle }
+repos:
+  - { label: RomuaIdo/brasilore, url: 'https://github.com/RomuaIdo/brasilore' }
+order: 6
+---
+
+{/* TODO: confirm course name (likely Técnicas de Programação) and team credit. */}
+
+## Context and problem
+
+The game was the vehicle; the goal was the architecture: a well-defined class hierarchy, deliberate use of design patterns, persistence of game state, and a one- or two-player mode. The levels, *Cuca's Forest* and *Mule's Pasture*, use characters from Brazilian folklore.
+
+## Architecture and technical decisions
+
+```ascii title="Main hierarchy"
+ Ente
+  └── Entity
+       ├── Character ──┬── Player
+       │               └── Enemy
+       ├── Obstacle ───┬── Plataform
+       │               ├── ThornyBush
+       │               └── Honey
+       └── Projectile
+
+ Phase ──┬── CucasForest          Menu ──┬── MainMenu
+         └── MulesPasture                ├── NewGameMenu
+                                         ├── PauseMenu
+ List<T> ── EntitiesList                 ├── GameOverMenu
+                                         └── Leaderboard
+```
+
+**Singleton in the managers.** `GraphicsManager` and `CollisionManager` have a single instance accessed through `getInstance()`: there is one window and one collision world per run.
+
+**Observer in the interface.** Buttons and text fields subscribe to `MouseSubject` and `TextInputSubject`. The event loop notifies the observers, without knowing each screen component.
+
+**Chain of responsibility in events.** Keyboard, mouse and text input are handled by chained `EventHandler`s: each one consumes the event it recognizes and passes the rest on.
+
+**Custom template list.** `List<T>` is a generic linked list, specialized as `EntitiesList`, used to traverse entities every frame.
+
+## Implementation
+
+The match state (level, players, enemies, obstacles, score) is serialized with nlohmann/json: each class exposes `toJson()` and `fromJson()`, and `Game::saveGame()` writes the file. The leaderboard separates one-player and two-player matches.
+
+```cpp
+// Game.h
+json toJson() const;
+void fromJson(const json &j);
+void saveGame(const std::string &filename) const;
+void saveScoretoLeaderboard();
+```
+
+The `Makefile` detects the operating system and builds on both Linux and Windows (MSYS2 UCRT64), statically linking SFML to the GCC runtime on Windows.
+
+<MediaPlaceholder what="Screenshot of a level in play" />
+
+<MediaPlaceholder what="Screenshot of the main menu and the leaderboard" />
+
+## Results and next steps
+
+- Game delivered with two levels, one- and two-player modes, saving and leaderboard.
+- After delivery, the code was migrated from SFML 2 to SFML 3.
+- Possible next step: replace the custom linked list with standard library containers where it is not a project requirement.

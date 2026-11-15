@@ -1,0 +1,191 @@
+---
+import { channels } from '../config/domains';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+// Static logic-analyzer traces, built at compile time. One lane per domain channel.
+const W = 1000;
+const H = 36;
+const HI = 6;
+const LO = H - 6;
+
+// Digital trace from a bit string; each bit spans `step` units.
+function digital(bits: string, step: number): string {
+  let x = 0;
+  let level = bits[0] === '1' ? HI : LO;
+  let d = `M0 ${level}`;
+  for (const b of bits) {
+    const y = b === '1' ? HI : LO;
+    if (y !== level) {
+      d += ` V${y}`;
+      level = y;
+    }
+    x += step;
+    d += ` H${Math.min(x, W)}`;
+  }
+  return d;
+}
+
+// Parallel bus: crossing segments with a hex value per slot.
+function bus(values: string[], slot: number) {
+  const k = 6;
+  let top = `M0 ${HI}`;
+  let bottom = `M0 ${LO}`;
+  const labels: { x: number; v: string }[] = [];
+  values.forEach((v, i) => {
+    const x0 = i * slot;
+    const x1 = x0 + slot;
+    top += ` L${x0 + k} ${HI} H${x1 - k} L${x1} ${H / 2}`;
+    bottom += ` L${x0 + k} ${LO} H${x1 - k} L${x1} ${H / 2}`;
+    labels.push({ x: x0 + slot / 2, v });
+  });
+  return { d: `${top} ${bottom}`, labels };
+}
+
+// SPI-like clock bursts separated by idle gaps.
+const sclk = '0' + ('10'.repeat(8) + '000000').repeat(4) + '0'.repeat(20);
+// Hex payload; reads "GRALHA" in ASCII as a nod to the 16-bit CPU.
+const data = bus(['0x47', '0x52', '0x41', '0x4C', '0x48', '0x41', 'IDLE', '0xA5'], 125);
+const vision = '0011100111111001000011110110000111111100001101111000011100001111';
+const sw = '0000111111110000000011111111111100000000111100001111111111110000';
+
+const traces = [
+  { ...channels[0], kind: 'digital' as const, d: digital(sclk, 1000 / sclk.length) },
+  { ...channels[1], kind: 'bus' as const, d: data.d, labels: data.labels },
+  { ...channels[2], kind: 'digital' as const, d: digital(vision, W / vision.length) },
+  { ...channels[3], kind: 'digital' as const, d: digital(sw, W / sw.length) },
+];
+---
+
+<div class="analyzer" aria-hidden="true">
+  {
+    traces.map((tr, i) => (
+      <div class={`lane ch-${tr.ch}`} style={`--i:${i}`}>
+        <span class="lane-label">
+          <span class="lane-ch">CH{tr.ch}</span>
+          {tr[lang]}
+        </span>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" class="lane-svg">
+          <path d={tr.d} vector-effect="non-scaling-stroke" />
+        </svg>
+        {tr.kind === 'bus' && (
+          <div class="bus-values">
+            {tr.labels.map((l) => (
+              <span style={`left:${(l.x / W) * 100}%`}>{l.v}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .analyzer {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.9rem 0;
+    border-block: 1px solid var(--rule);
+    background-image: linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 10% 100%;
+    background-position: 7.5rem 0;
+  }
+
+  .lane {
+    position: relative;
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    align-items: center;
+    height: 2.4rem;
+  }
+
+  .lane-label {
+    font-family: var(--font-mono);
+    font-stretch: 85%;
+    font-size: 0.68rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+
+  .lane-ch {
+    color: var(--ch);
+  }
+
+  .lane-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+
+    & path {
+      fill: none;
+      stroke: var(--ch);
+      stroke-width: 1.6;
+      stroke-linejoin: miter;
+    }
+  }
+
+  .bus-values {
+    position: absolute;
+    inset: 0 0 0 7.5rem;
+    pointer-events: none;
+
+    & span {
+      position: absolute;
+      top: 50%;
+      translate: -50% -50%;
+      font-family: var(--font-mono);
+      font-stretch: 85%;
+      font-size: 0.62rem;
+      color: var(--ch);
+    }
+  }
+
+  /* One load sequence: traces are acquired left to right, lane by lane. */
+  @media (prefers-reduced-motion: no-preference) {
+    .lane-svg {
+      animation: acquire 1.4s cubic-bezier(0.3, 0.6, 0.2, 1) both;
+      animation-delay: calc(var(--i) * 140ms + 150ms);
+    }
+    .bus-values {
+      animation: fade 0.6s ease-out both;
+      animation-delay: 900ms;
+    }
+  }
+
+  @keyframes acquire {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .lane {
+      grid-template-columns: 5rem 1fr;
+    }
+    .bus-values {
+      inset-inline-start: 5rem;
+    }
+    .bus-values span:nth-child(even) {
+      display: none;
+    }
+    .analyzer {
+      background-position: 5rem 0;
+    }
+  }
+</style>

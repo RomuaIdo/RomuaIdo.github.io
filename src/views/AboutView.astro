@@ -1,0 +1,109 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../config/site';
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const gh = site.github.profile;
+---
+
+<Base title={t('nav.about')}>
+  <article class="pt-12 sm:pt-16">
+    <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold tracking-[-0.02em]">{t('about.more')}</h1>
+    {
+      lang === 'pt' ? (
+        <div class="prose mt-8">
+          <p>
+            Graduando em Engenharia da Computação na UTFPR, Campus Curitiba, com conclusão prevista em {site.education.current.expected}.
+            Antes disso, técnico em Petróleo e Gás pela UFPR (2023). O foco atual é a fronteira entre hardware e software:
+            firmware para microcontroladores, projeto de processadores em RTL e visão computacional aplicada.
+          </p>
+
+          <h2>PETECO · UTFPR</h2>
+          <p>Bolsista do PET Engenharia de Computação desde 09/2024, em extensão, pesquisa e instrutoria técnica.</p>
+          <ul>
+            <li>
+              Série de oficinas de ESP32 para alunos da disciplina Oficina de Integração: fundamentos e diferenças em relação ao Arduino;
+              PWM, timers e protocolos <code>I2C</code> e <code>SPI</code>; FreeRTOS, memória flash e energia; Wi-Fi e IoT com servidor web,
+              MQTT, NTP e OTA. Slides em Marp e práticas em Arduino IDE e PlatformIO no <a href={`${gh}/esp32-oficina`}>repositório da série</a>.
+            </li>
+            <li>Minicurso de Git, com material em <a href={`${gh}/oficina-git`}>oficina-git</a>.</li>
+            <li>Minicursos práticos de ESP32/IoT e FreeRTOS.</li>
+          </ul>
+
+          <h2>AP[x] · UTFPR + IPPUC</h2>
+          <p>
+            Membro da Task 4 desde 06/2026: detecção orientada de sinalização viária horizontal e elementos urbanos em ortofotos de Curitiba.
+            Detalhes no <a href="/projetos/mapeamento-ippuc/">estudo de caso</a>.
+          </p>
+
+          <h2>Iniciação científica · UFPR (2022–2023)</h2>
+          <p>
+            Bolsa CNPq (PIBIC EM) no Núcleo de Pesquisa e Desenvolvimento de Energia Autossustentável (NPDEAS), sob orientação do
+            Prof. José Viriato Coelho Vargas, PhD, no projeto “Otimização termodinâmica de sistemas físicos”. Tema do relatório:
+            desenvolvimento de processo de cultivo de microalgas em aerofotobiorreatores para potenciais atividades biológicas.
+          </p>
+          <ul>
+            <li>Revisão de literatura sobre cultivo de microalgas, sistemas abertos e fechados e compostos bioativos.</li>
+            <li>
+              Análise comparativa de dados experimentais do NPDEAS: cultivo de <em>Tetradesmus obliquus</em> em meio CHU combinado com
+              efluente de suinocultura (absorbância em nove coletas e biomassa seca em triplicata) e uso do extrato como bioestimulante
+              em sementes de alface.
+            </li>
+            <li>
+              Conclusão do relatório: a combinação de efluente com meio sintético é viável e reduz a quantidade de meio CHU necessária.
+            </li>
+          </ul>
+        </div>
+      ) : (
+        <div class="prose mt-8">
+          <p>
+            Computer Engineering undergraduate at UTFPR, Curitiba campus, expected to graduate in {site.education.current.expected}.
+            Before that, Petroleum and Gas technician at UFPR (2023). Current focus is the boundary between hardware and software:
+            microcontroller firmware, RTL processor design and applied computer vision.
+          </p>
+
+          <h2>PETECO · UTFPR</h2>
+          <p>Scholarship holder at PET Computer Engineering since 09/2024, working on outreach, research and technical teaching.</p>
+          <ul>
+            <li>
+              ESP32 workshop series for students of the Oficina de Integração course: fundamentals and differences from Arduino;
+              PWM, timers and the <code>I2C</code> and <code>SPI</code> protocols; FreeRTOS, flash memory and power; Wi-Fi and IoT with a
+              web server, MQTT, NTP and OTA. Marp slides and exercises for Arduino IDE and PlatformIO in the <a href={`${gh}/esp32-oficina`}>series repository</a>.
+            </li>
+            <li>Git short course, material in <a href={`${gh}/oficina-git`}>oficina-git</a>.</li>
+            <li>Hands-on short courses on ESP32/IoT and FreeRTOS.</li>
+          </ul>
+
+          <h2>AP[x] · UTFPR + IPPUC</h2>
+          <p>
+            Task 4 member since 06/2026: oriented detection of horizontal road markings and urban features in Curitiba orthophotos.
+            Details in the <a href="/en/projects/mapeamento-ippuc/">case study</a>.
+          </p>
+
+          <h2>Undergraduate research · UFPR (2022–2023)</h2>
+          <p>
+            CNPq scholarship (PIBIC EM) at the Self-Sustainable Energy Research and Development Center (NPDEAS), advised by
+            Prof. José Viriato Coelho Vargas, PhD, under the project “Thermodynamic optimization of physical systems”. Report topic:
+            developing a microalgae cultivation process in airlift photobioreactors for potential biological activity.
+          </p>
+          <ul>
+            <li>Literature review on microalgae cultivation, open and closed systems and bioactive compounds.</li>
+            <li>
+              Comparative analysis of NPDEAS experimental data: <em>Tetradesmus obliquus</em> grown in CHU medium combined with swine
+              wastewater (absorbance over nine samplings and dry biomass in triplicate), and the extract used as a biostimulant on
+              lettuce seeds.
+            </li>
+            <li>Report conclusion: combining wastewater with synthetic medium is viable and reduces the amount of CHU medium needed.</li>
+          </ul>
+        </div>
+      )
+    }
+  </article>
+</Base>

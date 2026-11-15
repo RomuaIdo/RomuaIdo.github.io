@@ -1,0 +1,136 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import DomainTag from './DomainTag.astro';
+import type { Lang } from '../i18n/ui';
+import { entrySlug, projectHref, useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  projects: CollectionEntry<'projects'>[];
+}
+
+const { lang, projects } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<!-- Datasheet-style index: one row per project, domain encoded by channel color. -->
+<table class="index w-full">
+  <thead class="sr-only sm:not-sr-only">
+    <tr>
+      <th scope="col">{t('projects.col.name')}</th>
+      <th scope="col">{t('projects.col.domain')}</th>
+      <th scope="col">{t('projects.col.stack')}</th>
+      <th scope="col" class="text-right">{t('projects.col.year')}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      projects.map((p) => (
+        <tr>
+          <th scope="row">
+            <a href={projectHref(lang, entrySlug(p.id))} class="name">
+              {p.data.title}
+            </a>
+            <p class="summary">{p.data.summary}</p>
+          </th>
+          <td>
+            <DomainTag lang={lang} domain={p.data.domain} />
+          </td>
+          <td>
+            <ul class="flex flex-wrap gap-1">
+              {p.data.stack.slice(0, 4).map((s) => (
+                <li class="tag">{s}</li>
+              ))}
+            </ul>
+          </td>
+          <td class="year">
+            {p.data.year}
+            {p.data.status === 'active' && <span class="block text-xs text-muted">{t('status.active')}</span>}
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .index {
+    border-collapse: collapse;
+  }
+
+  thead th {
+    text-align: left;
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding: 0 1rem 0.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  tbody th,
+  tbody td {
+    text-align: left;
+    vertical-align: top;
+    padding: 1.1rem 1rem 1.1rem 0;
+    font-weight: 400;
+  }
+
+  tbody th {
+    width: 44%;
+  }
+
+  .name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--link);
+    }
+  }
+
+  .summary {
+    margin-top: 0.3rem;
+    font-size: 0.92rem;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  .year {
+    text-align: right;
+    padding-right: 0;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Stack the row on narrow screens. */
+  @media (max-width: 40rem) {
+    tbody tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding-block: 1rem;
+      gap: 0.5rem 1rem;
+    }
+    tbody th,
+    tbody td {
+      padding: 0;
+      width: auto;
+    }
+    tbody th {
+      grid-column: 1 / -1;
+    }
+    .year {
+      grid-row: 2;
+      grid-column: 2;
+    }
+    tbody td:nth-of-type(2) {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

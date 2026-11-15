@@ -1,0 +1,38 @@
+---
+title: Local dashboard for an IP camera using the PPPP protocol
+summary: Reverse engineering of the proprietary P2P protocol (CS2 PPCS/PPPP over UDP) of a Wi-Fi camera to control it on the local network, without the cloud or a manufacturer account.
+tags: [UDP, PPPP, Ghidra, JADX, Python, aarch64]
+year: '2026'
+repos:
+  - { label: RomuaIdo/cy365-local-camera, url: 'https://github.com/RomuaIdo/cy365-local-camera' }
+order: 1
+---
+
+## Context
+
+The camera only works through the manufacturer's app, which goes through external P2P servers even when phone and camera are on the same network. The goal was to talk to **my** camera, on **my** network, without the cloud.
+
+## Method
+
+1. Decompilation of the Android app (JADX) to locate the native library `libobject_jni.so` (arm64-v8a), which embeds the CS2 PPCS/PPPP stack.
+2. Analysis of the library in Ghidra from the dynamic symbol table (about 5241 symbols; `.symtab` absent). Ghidra address = `nm -D` offset + `0x100000`.
+3. Export of the tables used by the cipher (256-byte S-box and CRC matrix) to binary files and reimplementation in pure Python.
+4. Validation at three levels: decompilation, cipher round trip (1000 of 1000 inputs) and packet capture against the real camera. What only passed through decompilation remains marked as a hypothesis in the documentation.
+
+## What was found
+
+- LAN discovery over UDP on port 32108; default P2P server on port 32100.
+- Proprietary cipher with feedback on the previous ciphertext byte, with a 4-byte state derived from the key:
+
+$$
+\mathrm{out}_i = S\big[(\mathrm{in}'_{i-1} + st[\mathrm{in}'_{i-1} \bmod 4]) \bmod 256\big] \oplus \mathrm{in}_i
+$$
+
+  where $\mathrm{in}'_{i-1}$ is the previous ciphertext byte.
+- 4-byte session header (`0xF1`, type, big-endian length) and a `0xD1` subheader with channel and sequence number for acknowledged data.
+
+## Result
+
+Protocol library and local web dashboard (a single HTML file, no CDN) with live MJPEG video, reassembly of out-of-order packets, IMA ADPCM audio decoded in the browser, snapshots, and LED and infrared control. Offline test suites for each module and a server that simulates the camera. Tested on a single model.
+
+Commands that change the camera (settings, Wi-Fi, firmware) are kept out of the default path; the password is never written to disk or to logs.
