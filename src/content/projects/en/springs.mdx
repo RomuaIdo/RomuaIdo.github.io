@@ -1,0 +1,46 @@
+---
+title: Coupled mass-spring system
+summary: Python simulation of N masses coupled by springs between two walls, with normal modes, frequencies, amplitudes, and phases computed through generalized eigenvalues.
+domain: simulation
+stack: [Python, NumPy, SciPy, Pygame]
+start: '2024-12'
+end: '2024-12'
+context: Theoretical Physics (Física Teórica), UTFPR
+featured: false
+role: Individual project.
+repos:
+  - { label: RomuaIdo/springs, url: 'https://github.com/RomuaIdo/springs' }
+order: 13
+---
+
+import shot from '../../../assets/projects/springs.png';
+
+## Context and problem
+
+Show that the seemingly chaotic motion of coupled masses is a sum of normal modes, each oscillating at its own frequency.
+
+## Architecture and technical decisions
+
+For $N$ masses connected to each other and to the walls by springs, Newton's second law gives the linear system
+
+$$
+M\ddot{\vec{x}} + K\vec{x} = 0
+$$
+
+with $M$ diagonal (masses) and $K$ tridiagonal (spring constants). Assuming $\vec{x} = \vec{a}\cos(\omega t + \varphi)$, one arrives at the generalized eigenvalue problem
+
+$$
+K\vec{a} = \omega^2 M\vec{a}
+$$
+
+solved with `scipy.linalg.eigh(K, M)`. The eigenvalues give the frequencies $\omega_k = \sqrt{\lambda_k}$, and the initial position and velocity conditions define the amplitude and phase of each mode.
+
+## Implementation
+
+The code is split into initialization, update (assembling $K$ and $M$, normal modes, amplitudes, and phases), rendering, and plots. The user sets the number of masses, mass values, spring constants, and initial conditions; the screen shows the masses, the springs, and real-time plots of position, velocity, and acceleration.
+
+<Figure src={shot} alt="Simulation with masses, springs, and plots of position, velocity, and acceleration" caption="Simulation running." />
+
+## Results and next steps
+
+Since the solution is analytic (a sum of modes), it accumulates no integration error over time. A next step would be to add damping, which makes the problem non-conservative.

@@ -7,6 +7,7 @@ import Figure from '../components/Figure.astro';
 import MediaPlaceholder from '../components/MediaPlaceholder.astro';
 import { routes, type Lang } from '../i18n/ui';
 import { benchHref, entrySlug, projectHref, useTranslations } from '../i18n/utils';
+import { periodLabel, statusLine } from '../lib/timeline';
 
 // Renders either a project case study or a bench log.
 type Props =
@@ -22,7 +23,6 @@ const altPath = kind === 'projects' ? projectHref(other, slug) : benchHref(other
 const backHref = kind === 'projects' ? `${routes[lang].projects}/` : `${routes[lang].bench}/`;
 const p = kind === 'projects' ? entry.data : null;
 const repos = entry.data.repos;
-const statusKey = p ? (`status.${p.status}` as const) : null;
 const chips: string[] = kind === 'projects' ? entry.data.stack : entry.data.tags;
 ---
 
@@ -73,14 +73,12 @@ const chips: string[] = kind === 'projects' ? entry.data.stack : entry.data.tags
                 )}
                 <div>
                   <dt class="text-muted">{t('case.period')}</dt>
-                  <dd>{p.period ?? p.year}</dd>
+                  <dd>{periodLabel(p, lang)}</dd>
                 </div>
-                {statusKey && (
-                  <div>
-                    <dt class="text-muted">{t('case.status')}</dt>
-                    <dd>{t(statusKey)}</dd>
-                  </div>
-                )}
+                <div>
+                  <dt class="text-muted">{t('case.status')}</dt>
+                  <dd>{statusLine(p, lang)}</dd>
+                </div>
               </>
             )
           }

@@ -1,38 +1,35 @@
 ---
-title: Urban road signage mapping
+title: Urban road marking mapping
 summary: Oriented bounding box (OBB) detection pipeline for road markings and urban elements in high-resolution aerial orthophotos of Curitiba, in partnership with IPPUC.
 domain: vision
 stack: [Python, YOLO11-OBB, YOLO26-OBB, Ultralytics, rasterio, geopandas, X-AnyLabeling]
-year: '2026'
-period: since 06/2026
-status: active
-context: AP[x], UTFPR + IPPUC extension project, Task 4
-role: _To be confirmed_ — describe here the individual responsibility within Task 4.
+start: '2026-06'
+end: '2026-12'
+context: AP[x], UTFPR + IPPUC outreach project, Task 4
+role: Literature review and structuring of training, testing, and techniques to improve the computer vision model (YOLO26-OBB).
 team: []
 repos: []
 order: 2
 ---
 
-{/* TODO: confirm individual role, team names and whether the repository can be linked. */}
+{/* TODO: add team names and repository link once cleared for publication. */}
 
 ## Context and problem
 
-The Instituto de Pesquisa e Planejamento Urbano de Curitiba (IPPUC) maintains high-resolution aerial orthophotos of the city. Inventorying road markings (crosswalks, arrows, stop lines) and other urban elements from these images is slow, manual work. Task 4 of AP[x] investigates an automatic detection pipeline that produces georeferenced layers usable by urban planning.
+The Curitiba Urban Planning and Research Institute (IPPUC) maintains high-resolution aerial orthophotos of the city. Inventorying road markings (crosswalks, arrows, stop lines) and other urban elements from these images is slow, manual work. Task 4 of AP[x] investigates an automatic detection pipeline that produces georeferenced layers usable by urban planning.
 
 ## Architecture and technical decisions
-
-> Draft built from the project stack. Confirm steps and decisions with the team before publishing.
 
 ```ascii title="Pipeline"
  orthophoto (GeoTIFF)
         |
         v
- tile cropping     ----------------->  OBB annotation (X-AnyLabeling)
+ tile cropping  --------------------->  OBB annotation (X-AnyLabeling)
  (rasterio)                                     |
         |                                       v
         |                            YOLO11-OBB / YOLO26-OBB training
         v                                       |
- per-tile inference   <-------------------------+
+ per-tile inference  <--------------------------+
         |
         v
  pixel boxes --> map coordinates (raster transform)
@@ -41,19 +38,21 @@ The Instituto de Pesquisa e Planejamento Urbano de Curitiba (IPPUC) maintains hi
  vector layer (geopandas) --> IPPUC GIS
 ```
 
-**Oriented bounding boxes (OBB) instead of axis-aligned.** Crosswalks and arrows appear at any angle, following the direction of the roads. An axis-aligned box around a diagonal crosswalk encloses a lot of asphalt and overlaps its neighbors; the oriented box describes the object with four vertices and an angle.
+**Oriented boxes (OBB) instead of axis-aligned.** Crosswalks and arrows appear at any angle, following the direction of the roads. An axis-aligned box around a diagonal crosswalk encloses a lot of asphalt and overlaps its neighbors; the oriented box describes the object with four vertices and an angle.
 
-**Comparison across YOLO generations.** The pipeline is evaluated with YOLO11-OBB and YOLO26-OBB on the same annotated set, to choose the family by measured results and not by the newest version.
+**Comparison across YOLO generations.** YOLO11-OBB and YOLO26-OBB were evaluated on the same annotated set, to choose by measured result and not by the newest version. YOLO26-OBB was adopted as the project model.
 
-**Georeferencing at the end of the pipeline.** The network works in the pixel coordinates of each tile; conversion to map coordinates uses the raster's own affine transform (`rasterio`), and the resulting geometries are assembled with `geopandas`.
+**Georeferencing at the end of the pipeline.** The network works in pixel coordinates of each tile; the conversion to map coordinates uses the raster's own affine transform (`rasterio`), and the resulting geometries are assembled with `geopandas`.
 
 ## Implementation
 
-<MediaPlaceholder what="Example of OBB detections over an orthophoto crop" note="Do not publish orthophotos or real detections without confirmed permission from IPPUC." />
+My responsibility in Task 4 is the evolution of the model: reviewing studies on oriented detection in aerial imagery, structuring the training and testing cycles, and evaluating techniques that improve YOLO26-OBB performance on the orthophotos.
+
+<MediaPlaceholder what="Example of OBB detections over an orthophoto crop" note="Do not publish real orthophotos or detections without confirmed permission from IPPUC." />
 
 <MediaPlaceholder what="Example of an annotation in X-AnyLabeling" note="Use an authorized crop or a synthetic image." />
 
-_Implementation details (tile size, annotated classes, handling of tile borders) to be added after confirming what can be published._
+_Implementation details (tile size, annotated classes, handling of tile borders) to be added once what can be published is confirmed._
 
 ## Results and next steps
 

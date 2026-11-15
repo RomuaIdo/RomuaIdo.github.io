@@ -46,10 +46,11 @@ Add an MDX file to `src/content/projects/pt/` and/or `src/content/projects/en/`.
 | `summary` | yes | 220 characters or fewer |
 | `domain` | yes | `embedded`, `hardware`, `vision`, `iot` or `software` |
 | `stack` | yes | list of technologies |
-| `year` | yes | |
-| `period` | no | |
-| `status` | yes | `active`, `done` or `paused` |
-| `context` | no | |
+| `start` | yes | start month, `YYYY-MM` |
+| `end` | no | expected or actual end month, `YYYY-MM`; omit for open-ended work |
+| `paused` | no | boolean, default `false` |
+| `featured` | no | boolean, default `true`; `false` lists the project in the compact "Coursework" section instead of the main index |
+| `context` | no | course or program |
 | `role` | yes | |
 | `team` | yes | list of `{ name, github?, confirmed }` |
 | `repos` | yes | list of `{ label, url }` |
@@ -58,6 +59,12 @@ Add an MDX file to `src/content/projects/pt/` and/or `src/content/projects/en/`.
 | `order` | yes | sort position |
 | `draft` | yes | hides the entry when `true` |
 
+### Automatic status
+
+Status is derived at build time in `src/lib/timeline.ts`. Up to the last day of the `end` month, the project shows as in progress with its expected end date; from the first day of the following month, it shows as completed in the `end` month (e.g. `end: '2026-12'` reads "concluído em 12/2026" from January 2027 on).
+
+The deploy workflow rebuilds daily (cron 06:00 UTC) so the published site stays current. GitHub disables scheduled workflows after 60 days without repository activity; if that happens, re-enable the workflow in the Actions tab.
+
 The body must use these sections, in order:
 
 1. Context and problem
@@ -65,7 +72,7 @@ The body must use these sections, in order:
 3. Implementation
 4. Results and next steps
 
-For media that does not exist yet, use the `<MediaPlaceholder>` component. For images, use the `<Figure>` component, which renders WebP with `loading="lazy"`.
+For media that does not exist yet, use the `<MediaPlaceholder>` component. For images, use the `<Figure>` component, which renders WebP with `loading="lazy"`. A case study or bench page can import images from `src/assets/` inside its MDX and render them with `<Figure src={...} alt="..." />`.
 
 ## Commands
 

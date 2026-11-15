@@ -1,27 +1,34 @@
 ---
 title: Troca do regulador LDO de um gravador ST-Link V2
-summary: Reparo em nível de componente de um clone de ST-Link V2 que parou de funcionar, com substituição do regulador LDO em encapsulamento SOT-23-5.
+summary: A linha de 3,3 V de um clone de ST-Link V2 entregava só 2,3 V e não gravava alguns microcontroladores. A troca do LDO SOT-23-5 devolveu 3,3 V estáveis.
 tags: [SMD, SOT-23-5, LDO, SWD, STM32]
 year: '2026'
 order: 2
 ---
 
-{/* TODO: fill symptom, measurements, part number and replacement part. */}
-
 ## Sintoma
 
-_A preencher: como a falha se manifestou (não enumerava no USB, não detectava o alvo, aquecimento etc.)._
+O gravador enumerava no USB, mas falhava ao programar alguns microcontroladores. Medindo a linha de 3,3 V da placa, a saída estava em **2,3 V**.
+
+Essa linha não alimenta só a lógica do próprio ST-Link: é dela que vem o nível alto dos sinais de gravação. Com 2,3 V, o nível alto ficava abaixo do limiar de entrada de alguns alvos, e a comunicação falhava.
 
 ## Diagnóstico
 
-_A preencher: medições feitas (tensão de entrada de 5 V do USB, saída de 3,3 V do regulador, curto na linha), e por que o LDO foi apontado como causa._
+Com a entrada de 5 V do USB normal e a saída do regulador baixa, a suspeita recaiu sobre o próprio LDO, que converte os 5 V do USB nos 3,3 V da placa.
+
+| | Original | Substituto |
+|---|---|---|
+| Marcação | `LB2K` | `DE-TOX` |
+| Componente | XC6219B332MR (Torex Semiconductor ou equivalente chinês) | RT9193-33GB (Richtek) |
+| Saída nominal | 3,3 V | 3,3 V |
+| Encapsulamento | SOT-23-5 | SOT-23-5 |
 
 <MediaPlaceholder what="Foto da placa com o regulador SOT-23-5 identificado" ratio="4 / 3" />
 
 ## Reparo
 
-_A preencher: componente original e substituto (código de marcação, corrente máxima, pinagem), técnica de remoção e soldagem._
+O regulador original foi removido e substituído pelo RT9193-33GB, de mesmo encapsulamento e mesma tensão de saída.
 
 ## Resultado
 
-_A preencher: verificação após o reparo (gravação de um STM32 via SWD, por exemplo)._
+Depois da troca, a linha voltou a **3,3 V estáveis** e o gravador passou a programar normalmente os microcontroladores que antes falhavam.

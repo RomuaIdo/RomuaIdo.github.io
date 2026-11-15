@@ -10,10 +10,10 @@ export const site = {
       return `https://github.com/${this.user}`;
     },
   },
-  // TODO: fill in before publishing; empty values are hidden in the UI.
-  email: '',
-  linkedin: '',
-  lattes: '',
+  // Empty values are hidden in the UI.
+  email: 'viniciusromualdo24@gmail.com',
+  linkedin: 'https://www.linkedin.com/in/vin%C3%ADcius-romualdo-silva-4241833b8/',
+  lattes: 'http://lattes.cnpq.br/1979015471245674',
   location: 'Curitiba, PR',
   education: {
     current: {

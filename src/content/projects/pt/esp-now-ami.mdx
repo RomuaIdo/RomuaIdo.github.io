@@ -1,0 +1,51 @@
+---
+title: ESP-NOW AMI
+summary: Duas ESP32-S3 codificam mensagens em AMI pseudo-ternário e as enviam por ESP-NOW a um master, que repassa ao PC; um servidor Node.js desenha as formas de onda no navegador.
+domain: communication
+stack: [ESP32-S3, C++, PlatformIO, ESP-NOW, Node.js, Serial]
+start: '2026-06'
+end: '2026-06'
+context: Comunicação de Dados, UTFPR
+featured: false
+role: Projeto individual — firmware do master e das slaves e as duas interfaces web.
+repos:
+  - { label: RomuaIdo/esp-now-ami, url: 'https://github.com/RomuaIdo/esp-now-ami' }
+order: 10
+---
+
+## Contexto e problema
+
+Demonstrar, com hardware real, um código de linha estudado na disciplina: o AMI pseudo-ternário, em que a informação é levada pelos pulsos de polaridade alternada, e não por dois níveis fixos.
+
+## Arquitetura e decisões técnicas
+
+```ascii title="Topologia"
+ [Slave 1] --ESP-NOW--+
+                      +--> [Master] --Serial USB--> PC: website/ (:3000)
+ [Slave 2] --ESP-NOW--+
+
+ PC slave --Serial USB--> [Slave n]    website-slave/ (:3001, :3002)
+```
+
+- **Codificação:** bit `0` alterna entre $+V$ e $-V$; bit `1` fica em $0$ V. Alternar a polaridade dos zeros mantém o nível médio do sinal em zero.
+- **Cifra simétrica XOR** aplicada à mensagem antes da codificação, para mostrar na interface a mensagem cifrada e a decifrada.
+- **Um firmware para as duas slaves**, diferenciadas por `SLAVE_ID` em build flag no `platformio.ini`. O MAC do master também entra por build flag.
+
+## Implementação
+
+```cpp
+// 0-bit -> alternates +1 / -1 ; 1-bit -> level 0
+static uint8_t amiEncode(const uint8_t* bytes, uint8_t byteLen, int8_t* out) {
+    uint8_t count    = 0;
+    int8_t  polarity = 1;   // first '0' bit becomes +1
+    // ...
+}
+```
+
+O master é uma ESP32-S3 SuperMini que só roteia entre ESP-NOW e Serial. No PC, a interface de cada slave mostra uma prévia da forma de onda enquanto a mensagem é digitada; a do master exibe, por slave, a forma de onda AMI, os bits decodificados, os bytes em hexadecimal e a mensagem cifrada e decifrada.
+
+<MediaPlaceholder what="Captura da interface do master com as formas de onda das duas slaves" />
+
+## Resultados e próximos passos
+
+Sistema funcionando com um master e duas slaves, com visualização em tempo real. Uma extensão natural é detectar violações de código (dois zeros seguidos com a mesma polaridade) no receptor.

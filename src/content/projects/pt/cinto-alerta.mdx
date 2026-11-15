@@ -3,14 +3,13 @@ title: Cinto Alerta
 summary: Cinto vestível que detecta quedas de idosos no próprio dispositivo e aciona um cuidador pelo Telegram, sem depender do Wi-Fi da casa no lado do usuário.
 domain: embedded
 stack: [ESP32-S3, C++, PlatformIO, TinyML, BMI270, SPI, ESP-NOW, FreeRTOS, LittleFS, Telegram Bot API]
-year: '2026'
-period: 2026 · entrega final em 12/2026
-status: active
+start: '2026-09'
+end: '2026-12'
 context: Oficina de Integração 2, Engenharia da Computação, UTFPR
 role: Firmware da estação base (master) — UI web de configuração, recepção ESP-NOW, alertas via Telegram e fila de reenvio persistida em LittleFS.
 team:
-  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes }
-  - { name: Arthur Gabriel Pellegrini Heberle, github: Arthur-Heberle }
+  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes, confirmed: true }
+  - { name: Arthur Gabriel Pellegrini Heberle, github: Arthur-Heberle, confirmed: true }
 repos:
   - { label: RomuaIdo/belt, url: 'https://github.com/RomuaIdo/belt' }
 order: 1
@@ -49,7 +48,7 @@ Não é um dispositivo médico: não há validação clínica e os dados de trei
 
 **ESP-NOW em vez do Wi-Fi da casa.** O cinto fala direto com a base. Como só a base conhece o canal do roteador, o pareamento começa no cinto, que varre os canais 1 a 13 com `PairRequest` em broadcast e trava no canal em que ouviu a base. A base só grava o cinto depois de um `PairConfirm`.
 
-**IMU via SPI com FIFO.** A IMU em uso é a Bosch **BMI270**, lida por `SPI` com interrupção de FIFO: o sensor acumula amostras e o ESP32-S3 lê em rajadas, em vez de acordar a cada amostra. A integração está feita localmente e ainda não foi publicada; o repositório público ainda contém o driver anterior, de MPU-6050 via `I2C`.
+**IMU via SPI com FIFO.** A IMU em uso é a Bosch **BMI270**, lida por `SPI` com interrupção de FIFO: o sensor acumula amostras e o ESP32-S3 lê em rajadas, em vez de acordar a cada amostra. A integração está em branches de desenvolvimento e ainda não chegou à branch principal, que mantém o driver anterior, de MPU-6050 via `I2C`.
 
 **Base sempre disponível.** A base roda em modo AP+STA: mantém a própria rede (`CintoAlerta-Master`) para configuração pelo celular e, ao mesmo tempo, se conecta ao roteador para falar com o Telegram.
 
@@ -101,7 +100,7 @@ Domínio, armazenamento, rede e mensagens têm suítes Unity executadas na placa
 
 ## Resultados e próximos passos
 
-Projeto em andamento, com entrega final em 12/2026. Métricas ainda não publicadas:
+Métricas ainda não publicadas:
 
 | Métrica | Valor |
 |---|---|
@@ -111,7 +110,7 @@ Projeto em andamento, com entrega final em 12/2026. Métricas ainda não publica
 
 Próximos passos:
 
-- Publicar a integração do BMI270 (SPI + FIFO) no repositório.
-- Treinar e embarcar a 1D CNN treinada no dataset SisFall no cinto.
+- Levar a integração do BMI270 (SPI + FIFO) e o modelo para a branch principal.
+- Validar no cinto a 1D CNN treinada no dataset SisFall, que hoje está em branches de desenvolvimento.
 - Implementar o heartbeat: um cinto sem bateria, travado ou fora de alcance é indistinguível de um idoso que está bem. A base deve avisar o cuidador quando os sinais pararem, com mensagem distinta de uma queda.
 - Pareamento pelo botão do cinto; hoje o registro é manual pelo endereço MAC no portal.

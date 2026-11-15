@@ -5,6 +5,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+  # Daily rebuild so date-derived project status stays current.
+  schedule:
+    - cron: '0 6 * * *'
 
 permissions:
   contents: read

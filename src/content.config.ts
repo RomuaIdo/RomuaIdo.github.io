@@ -12,6 +12,9 @@ const person = z.object({
   confirmed: z.boolean().default(false),
 });
 
+// Month as "YYYY-MM".
+const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+
 const repo = z.object({
   label: z.string(),
   url: z.url(),
@@ -26,10 +29,15 @@ const projects = defineCollection({
       summary: z.string().max(220),
       domain: z.enum(domainKeys),
       stack: z.array(z.string()).min(1),
-      year: z.string(),
-      period: z.string().optional(),
-      status: z.enum(['active', 'done', 'paused']),
+      // Status is derived from these dates at build time (see lib/timeline.ts).
+      start: month,
+      // Expected or actual end month; omit for open-ended work.
+      end: month.optional(),
+      paused: z.boolean().default(false),
+      // Course or program the project belongs to.
       context: z.string().optional(),
+      // Featured projects get a full row in the index; the rest go to the coursework list.
+      featured: z.boolean().default(true),
       role: z.string(),
       team: z.array(person).default([]),
       repos: z.array(repo).default([]),

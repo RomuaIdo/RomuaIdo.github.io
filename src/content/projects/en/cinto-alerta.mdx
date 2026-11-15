@@ -1,16 +1,15 @@
 ---
 title: Cinto Alerta
-summary: Wearable belt that detects falls in elderly people on the device itself and alerts a caregiver through Telegram, without depending on the home Wi-Fi on the user side.
+summary: Wearable belt that detects elderly falls on the device itself and alerts a caregiver through Telegram, without depending on the home Wi-Fi on the user's side.
 domain: embedded
 stack: [ESP32-S3, C++, PlatformIO, TinyML, BMI270, SPI, ESP-NOW, FreeRTOS, LittleFS, Telegram Bot API]
-year: '2026'
-period: 2026 · final delivery 12/2026
-status: active
+start: '2026-09'
+end: '2026-12'
 context: Oficina de Integração 2, Computer Engineering, UTFPR
-role: Base station (master) firmware — web configuration UI, ESP-NOW reception, Telegram alerts and a resend queue persisted in LittleFS.
+role: Base station (master) firmware — web configuration UI, ESP-NOW reception, Telegram alerts, and a resend queue persisted in LittleFS.
 team:
-  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes }
-  - { name: Arthur Gabriel Pellegrini Heberle, github: Arthur-Heberle }
+  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes, confirmed: true }
+  - { name: Arthur Gabriel Pellegrini Heberle, github: Arthur-Heberle, confirmed: true }
 repos:
   - { label: RomuaIdo/belt, url: 'https://github.com/RomuaIdo/belt' }
 order: 1
@@ -18,11 +17,11 @@ order: 1
 
 ## Context and problem
 
-The severity of a fall in elderly people depends less on the impact and more on the **time until help arrives**. Someone who falls alone at home and cannot get up may spend hours on the floor. Calling for help from a phone fails in exactly the worst cases: loss of consciousness, a broken hip, or the phone in another room.
+The severity of a fall in elderly people depends less on the impact and more on the **time until help arrives**. Someone who falls alone at home and cannot get up may spend hours on the floor. Calling for help by phone fails precisely in the worst cases: loss of consciousness, a broken hip, or the phone in another room.
 
 Cinto Alerta is an academic prototype with two nodes:
 
-- **Belt** (ESP32-S3 SuperMini, battery): reads an IMU, classifies the movement on the device itself and, on a fall, vibrates and lights an LED for a few seconds before sending the alert.
+- **Belt** (ESP32-S3 SuperMini, battery powered): reads an IMU, classifies the motion on the device itself and, on a fall, vibrates and lights an LED for a few seconds before sending the alert.
 - **Base** (ESP32-S3-DevKitC-1 N16R8, plugged into the wall): receives the alert over ESP-NOW and notifies caregivers through Telegram.
 
 It is not a medical device: there is no clinical validation, and the training data comes from falls simulated by young adults.
@@ -43,13 +42,13 @@ It is not a medical device: there is no clinical validation, and the training da
                                                   +-------------------+
 ```
 
-**Waist, not wrist.** The initial idea was a watch. The wrist moves independently of the body: slapping a table, clapping or taking the watch off produce signatures similar to a fall. The waist follows the center of mass and only really moves when the whole body moves.
+**Waist, not wrist.** The initial idea was a watch. The wrist moves independently of the body: slapping a table, clapping, or taking the watch off produce signatures similar to a fall. The waist follows the center of mass and only really moves when the whole body moves.
 
-**Cancellation window.** Telling "fell" apart from "sat down fast on the couch" is still an unsolved problem. The window turns a critical false alarm into a button press, and each cancellation is a real "not a fall" example for improving the model.
+**Cancellation window.** Telling "fell" apart from "sat down quickly on the couch" is still an unsolved problem. The window turns a critical false alarm into a button press, and each cancellation is a real "not a fall" example for improving the model.
 
-**ESP-NOW instead of the home Wi-Fi.** The belt talks directly to the base. Since only the base knows the router channel, pairing starts at the belt, which scans channels 1 to 13 with a broadcast `PairRequest` and locks onto the channel where it heard the base. The base only stores the belt after a `PairConfirm`.
+**ESP-NOW instead of the home Wi-Fi.** The belt talks directly to the base. Since only the base knows the router's channel, pairing starts at the belt, which scans channels 1 to 13 with a broadcast `PairRequest` and locks onto the channel where it heard the base. The base only stores the belt after a `PairConfirm`.
 
-**IMU over SPI with FIFO.** The IMU in use is the Bosch **BMI270**, read over `SPI` with a FIFO interrupt: the sensor accumulates samples and the ESP32-S3 reads them in bursts instead of waking up on every sample. The integration is done locally and has not been published yet; the public repository still contains the previous driver, for an MPU-6050 over `I2C`.
+**IMU over SPI with FIFO.** The IMU in use is the Bosch **BMI270**, read over `SPI` with a FIFO interrupt: the sensor accumulates samples and the ESP32-S3 reads them in bursts, instead of waking up for every sample. The integration is in development branches and has not reached the main branch yet, which keeps the previous driver, an MPU-6050 over `I2C`.
 
 **Always-available base.** The base runs in AP+STA mode: it keeps its own network (`CintoAlerta-Master`) for configuration from a phone and, at the same time, connects to the router to reach Telegram.
 
@@ -59,10 +58,10 @@ My part is the base firmware, a PlatformIO project (Arduino framework) organized
 
 | Layer | Responsibility |
 |---|---|
-| `App/AppController` | Coordinates Wi-Fi, NTP, the alert queue, Telegram sending and the portal |
-| `Web/WebPortal` | HTTP server and API of the configuration page, served from LittleFS |
+| `App/AppController` | Coordinates Wi-Fi, NTP, the alert queue, Telegram delivery, and the portal |
+| `Web/WebPortal` | HTTP server and API for the configuration page, served from LittleFS |
 | `Network/EspNowTransceiver`, `PairingService` | ESP-NOW reception and the pairing state machine |
-| `Messaging/TelegramTask` | Asynchronous sending in FreeRTOS tasks (up to 2 at a time) |
+| `Messaging/TelegramTask` | Asynchronous delivery in FreeRTOS tasks (up to 2 concurrent) |
 | `Storage/CallQueueStorage`, `ConfigStorage` | Resend queue and `config.json` persisted in LittleFS |
 
 ### Protocol
@@ -79,11 +78,11 @@ struct Header {
 #pragma pack(pop)
 ```
 
-Frames with an unexpected `magic`, type or size are discarded. The belt resends an `Alert` with the same `seq` until it receives the matching `AlertAck`.
+Frames with an unexpected `magic`, type, or size are discarded. The belt resends an `Alert` with the same `seq` until it receives the matching `AlertAck`.
 
 ### Resend queue
 
-Each alert becomes a file in `/queue` on LittleFS before any send attempt, so a power loss does not lose the event. On startup, corrupted or already delivered files are removed. Network failures and HTTP 5xx or 429 responses are retried with exponential backoff:
+Each alert becomes a file in `/queue` on LittleFS before any delivery attempt, so a power loss does not lose the event. At startup, corrupted or already delivered files are removed. Network failures and HTTP 5xx or 429 responses are retried with exponential backoff:
 
 $$
 d_0 = 5\,\text{s}, \qquad d_{n+1} = \min(2\,d_n,\; 300\,\text{s})
@@ -93,7 +92,7 @@ $$
 
 ### Tests
 
-Domain, storage, network and messaging have Unity suites run on the board (`pio test`), including persistence tests that write to flash and reboot tests. The web interface can be opened without hardware with `?mock`, which simulates the firmware API.
+Domain, storage, network, and messaging have Unity suites that run on the board (`pio test`), including persistence tests that write to flash and reboot tests. The web interface can be opened without hardware with `?mock`, which simulates the firmware API.
 
 <MediaPlaceholder what="Photo of the prototype: belt and base station" note="Bench photo to be added." />
 
@@ -101,7 +100,7 @@ Domain, storage, network and messaging have Unity suites run on the board (`pio 
 
 ## Results and next steps
 
-Work in progress, with final delivery in 12/2026. Metrics not yet published:
+Metrics not yet published:
 
 | Metric | Value |
 |---|---|
@@ -111,7 +110,7 @@ Work in progress, with final delivery in 12/2026. Metrics not yet published:
 
 Next steps:
 
-- Publish the BMI270 integration (SPI + FIFO) in the repository.
-- Train the 1D CNN on the SisFall dataset and embed it in the belt.
-- Implement the heartbeat: a belt with a dead battery, frozen or out of range is indistinguishable from an elderly person who is fine. The base should warn the caregiver when the signals stop, with a message distinct from a fall.
-- Pairing through the belt button; today registration is manual by MAC address in the portal.
+- Bring the BMI270 integration (SPI + FIFO) and the model to the main branch.
+- Validate on the belt the 1D CNN trained on the SisFall dataset, which is currently in development branches.
+- Implement the heartbeat: a belt with a dead battery, frozen, or out of range is indistinguishable from an elderly person who is fine. The base should warn the caregiver when the signals stop, with a message distinct from a fall.
+- Pairing through the belt button; today registration is manual, by MAC address in the portal.

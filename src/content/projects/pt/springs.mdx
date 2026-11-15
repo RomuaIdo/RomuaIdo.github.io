@@ -1,0 +1,46 @@
+---
+title: Sistema massa-mola acoplado
+summary: Simulação em Python de N massas acopladas por molas entre duas paredes, com modos normais, frequências, amplitudes e fases calculados por autovalores generalizados.
+domain: simulation
+stack: [Python, NumPy, SciPy, Pygame]
+start: '2024-12'
+end: '2024-12'
+context: Física Teórica, UTFPR
+featured: false
+role: Projeto individual.
+repos:
+  - { label: RomuaIdo/springs, url: 'https://github.com/RomuaIdo/springs' }
+order: 13
+---
+
+import shot from '../../../assets/projects/springs.png';
+
+## Contexto e problema
+
+Mostrar que o movimento aparentemente caótico de massas acopladas é uma soma de modos normais, cada um oscilando com a própria frequência.
+
+## Arquitetura e decisões técnicas
+
+Para $N$ massas ligadas entre si e às paredes por molas, a segunda lei de Newton dá o sistema linear
+
+$$
+M\ddot{\vec{x}} + K\vec{x} = 0
+$$
+
+com $M$ diagonal (massas) e $K$ tridiagonal (constantes das molas). Supondo $\vec{x} = \vec{a}\cos(\omega t + \varphi)$, chega-se ao problema de autovalores generalizado
+
+$$
+K\vec{a} = \omega^2 M\vec{a}
+$$
+
+resolvido com `scipy.linalg.eigh(K, M)`. Os autovalores dão as frequências $\omega_k = \sqrt{\lambda_k}$, e as condições iniciais de posição e velocidade definem amplitude e fase de cada modo.
+
+## Implementação
+
+O código se divide em inicialização, atualização (montagem de $K$ e $M$, modos normais, amplitudes e fases), renderização e gráficos. O usuário define número de massas, valores das massas, constantes das molas e condições iniciais; a tela mostra as massas, as molas e gráficos em tempo real de posição, velocidade e aceleração.
+
+<Figure src={shot} alt="Simulação com massas, molas e gráficos de posição, velocidade e aceleração" caption="Simulação em execução." />
+
+## Resultados e próximos passos
+
+Como a solução é analítica (soma de modos), não acumula erro de integração ao longo do tempo. Um próximo passo seria adicionar amortecimento, o que torna o problema não conservativo.

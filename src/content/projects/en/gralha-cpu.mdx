@@ -3,34 +3,32 @@ title: Gralha — 16-bit processor in VHDL
 summary: 16-bit multicycle accumulator microprocessor with its own ISA, designed bottom-up in RTL, with a testbench for every component and a Sieve of Eratosthenes written in the ISA's own assembly.
 domain: hardware
 stack: [VHDL-2008, GHDL, GTKWave, Make]
-year: '2026'
-period: 04/2026 – 06/2026
-status: done
-role: ALU, register file, datapath, control unit, top-level integration (MPU), RAM with relative addressing and the BCC, CTZ and SLL instructions.
+start: '2026-04'
+end: '2026-06'
+context: Computer Architecture (Arquitetura de Computadores), UTFPR
+role: ALU, register file, datapath, control unit, top-level integration (MPU), RAM with relative addressing, and the BCC, CTZ, and SLL instructions.
 team:
-  - { name: Rafael Fernandes, github: Rafael-de-Andrade-Fernandes }
+  - { name: Rafael Fernandes, github: Rafael-de-Andrade-Fernandes, confirmed: true }
 repos:
   - { label: RomuaIdo/gralha-cpu, url: 'https://github.com/RomuaIdo/gralha-cpu' }
 order: 3
 ---
 
-{/* TODO: confirm course name (context field) and team credit. */}
-
 ## Context and problem
 
-The goal was to build a complete processor at the RTL level, with no ready-made IP: from the ALU to the control unit, each block with its own testbench, simulated in GHDL and inspected as waveforms in GTKWave. The acceptance test was to run a non-trivial program written in the processor's own ISA.
+The goal was to build a complete processor at the RTL level, with no off-the-shelf IP: from the ALU to the control unit, each block with its own testbench, simulated in GHDL and inspected as waveforms in GTKWave. The acceptance test was running a non-trivial program written in the processor's own ISA.
 
 ## Architecture and technical decisions
 
 ```ascii title="Simplified datapath"
             +-------+    17 bits    +------+
    PC ----->|  ROM  |-------------->|  IR  |----> control unit
-   ^        | 128x17|               +------+       (4 states)
+   ^        | 128x17|               +------+        (4 states)
    |        +-------+                  |
-   |                         Rx (4 bits) | 8/12-bit constant
+   |                         Rx (4 bits) | constant 8/12 bits
    |                                     v
    |                        +----------------------+
-   |                        | R1..R15 regs (R0=0)  |
+   |                        | R1..R15 file (R0=0)  |
    |                        +----------+-----------+
    |                                   |
    |        +-----+      +-----+       v
@@ -40,25 +38,25 @@ The goal was to build a complete processor at the RTL level, with no ready-made 
                v            v  C Z N OV
         +-------------+  +----------+
         | RAM 256x16  |  |  status  |
-        | [Rx + cte]  |  +----------+
+        | [Rx + cst]  |  +----------+
         +-------------+
 ```
 
 **Accumulator machine.** Every arithmetic operation has the accumulator as source and destination (`ADD A,Rx`, `SUB A,Rx`). This reduces the instruction to a single register field and simplifies the datapath, at the cost of more moves (`MOV A,Rx` / `MOV Rx,A`) in the assembly.
 
-**17-bit instruction.** A 5-bit opcode and four formats: register (`ooooo rrrr xxxxxxxx`), immediate to register with an 8-bit constant, immediate to the ALU with a 12-bit constant, and branch with a 7-bit address or offset. With one bit beyond the 16 data bits, 12-bit constants fit in the instruction itself, fetched in a single ROM access.
+**17-bit instruction.** A 5-bit opcode and four formats: register (`ooooo rrrr xxxxxxxx`), immediate to register with an 8-bit constant, immediate to the ALU with a 12-bit constant, and branch with a 7-bit address or offset. With one bit beyond the 16 of data, 12-bit constants fit in the instruction itself, fetched in a single ROM access.
 
 **R0 fixed at zero.** The file has 15 physical registers; address `0000` always reads zero. `MOV A, R0` clears the accumulator without a dedicated instruction.
 
-**Multicycle with four states.** Fetch, decode, execute (ALU and register writes) and a fourth state for memory access and branches. The program counter is written at fetch and, if the branch is taken, in the fourth state.
+**Multicycle with four states.** Fetch, decode, execute (ALU and register writes), and a fourth state for memory access and branches. The program counter is written at fetch and, if the branch is taken, in the fourth state.
 
-**Flags and signed/unsigned branches.** Subtraction is done as `a + not(b) + 1` in 17 bits, so the carry is the inverse of the borrow (*not-borrow*): `C = 1` means there was no borrow. Unsigned branches use this directly (`BLS`: `C = 0` or `Z = 1`; `BCC`: `C = 0`). Signed ones combine `N` and `OV` (`BGT`: `N = OV` and `Z = 0`). The zero flag is computed only over the 16 bits of the result, ignoring the carry bit.
+**Signed and unsigned flags and branches.** Subtraction is done as `a + not(b) + 1` in 17 bits, so the carry is the inverse of the borrow (*not-borrow*): `C = 1` means there was no borrow. Unsigned branches use this directly (`BLS`: `C = 0` or `Z = 1`; `BCC`: `C = 0`). Signed ones combine `N` and `OV` (`BGT`: `N = OV` and `Z = 0`). The zero flag is computed only over the 16 bits of the result, ignoring the carry bit.
 
 ## Implementation
 
 ### ALU
 
-The ALU produces a single 17-bit signal from which the result and flags are taken. The `CTZ` operation (count trailing zeros) is a priority chain over the operand bits:
+The ALU produces a single 17-bit signal from which the result and flags are derived. The `CTZ` operation (count trailing zeros) is a priority chain over the operand bits:
 
 ```vhdl
 aluout_result <= ('0' & a) + ('0' & b)                    when op = "00" else
@@ -77,9 +75,9 @@ ov <= '1' when (op = "00" and a(15) = b(15) and aluout_result(15) /= a(15)) or
 
 ### Sieve of Eratosthenes
 
-The program fills `RAM[i] = i` and then clears the multiples of each prime. Two dedicated instructions shorten the loops:
+The program fills `RAM[i] = i` and then clears the multiples of each prime. Two custom instructions shorten the loops:
 
-- `SLL A, R9` with `R9 = 9` shifts the index nine bits to the left; the carry comes out as 1 when the index reaches 128, and `BCC` ends the fill without a comparison.
+- `SLL A, R9` with `R9 = 9` shifts the index nine bits to the left; the carry goes to 1 when the index reaches 128, and `BCC` ends the fill without a comparison.
 - `CTZ A, R1` is 7 exactly when `R1 = 128`, the stop criterion of the prime search.
 
 ```asm
@@ -104,20 +102,20 @@ sieve:               ; clear multiples of the current prime
 
 At the end, the nonzero RAM positions between 2 and 127 are the primes.
 
-<MediaPlaceholder what="GTKWave waveform of the sieve execution" note="Capture of mpu_tb showing PC, state, accumulator and RAM writes (configuration in mpu.gtkw)." />
+<MediaPlaceholder what="GTKWave waveform of the sieve execution" note="Capture of mpu_tb showing PC, state, accumulator, and RAM writes (configuration in mpu.gtkw)." />
 
 ### Verification
 
-Each block has its own testbench in `tb/` (ALU, registers, register file, PC, ROM, datapath, control unit and top level). The `Makefile` analyzes, elaborates and runs any top level in GHDL with `--std=08` and writes the `.ghw` waveform for GTKWave.
+Each block has its own testbench in `tb/` (ALU, registers, file, PC, ROM, datapath, control unit, and top level). The `Makefile` analyzes, elaborates, and runs any top level in GHDL with `--std=08` and writes the `.ghw` waveform for GTKWave.
 
 ## Results and next steps
 
 - Complete processor simulated, running the sieve over the numbers up to 127 in a 256-word RAM.
-- 23 instructions, including memory with `[Rx + constant]` addressing and relative signed and unsigned branches.
+- 23 instructions, including memory with `[Rx + constant]` addressing and signed and unsigned relative branches.
 
 Next steps:
 
 - Expose the primes found on an output bus for debugging, instead of inspecting them in the RAM through the waveform.
 - Extend the sieve to use all the available RAM.
-- Generate the register file with `for ... generate` instead of the 15 hand-written instances.
-- A custom assembler for the `.asg` files.
+- Generate the register file with `for ... generate` in place of the 15 hand-written instances.
+- A dedicated assembler for the `.asg` files.

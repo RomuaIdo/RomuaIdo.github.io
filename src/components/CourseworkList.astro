@@ -1,0 +1,33 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import DomainTag from './DomainTag.astro';
+import type { Lang } from '../i18n/ui';
+import { entrySlug, projectHref } from '../i18n/utils';
+import { yearLabel } from '../lib/timeline';
+
+interface Props {
+  lang: Lang;
+  projects: CollectionEntry<'projects'>[];
+}
+
+const { lang, projects } = Astro.props;
+---
+
+<!-- Compact list for smaller course projects. -->
+<ul class="grid gap-x-10 border-t border-rule sm:grid-cols-2">
+  {
+    projects.map((p) => (
+      <li class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 border-b border-rule py-4">
+        <a href={projectHref(lang, entrySlug(p.id))} class="font-semibold text-ink no-underline hover:underline hover:decoration-link">
+          {p.data.title}
+        </a>
+        <span class="text-sm text-muted tabular-nums">{yearLabel(p.data)}</span>
+        <p class="col-span-2 text-[0.92rem] text-muted">{p.data.summary}</p>
+        <div class="col-span-2 mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <DomainTag lang={lang} domain={p.data.domain} />
+          {p.data.context && <span class="text-sm text-muted">{p.data.context}</span>}
+        </div>
+      </li>
+    ))
+  }
+</ul>

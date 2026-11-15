@@ -1,0 +1,44 @@
+---
+title: Collision simulator
+summary: 2D simulator in C and SDL2 of ball collisions by impulse, with a coefficient of restitution, gravity, an attracting center of mass, and sound proportional to relative velocity.
+domain: simulation
+stack: [C, SDL2, SDL2_ttf, SDL2_mixer, Make]
+start: '2024-06'
+end: '2024-07'
+context: Theoretical Physics (Física Teórica), UTFPR
+featured: false
+role: Individual project.
+repos:
+  - { label: RomuaIdo/CollisionSimulator, url: 'https://github.com/RomuaIdo/CollisionSimulator' }
+order: 12
+---
+
+import shot from '../../../assets/projects/collision-simulator.png';
+
+## Context and problem
+
+Visualize momentum conservation and elastic and inelastic collisions: several balls with random masses colliding with each other and with the borders, with controls to turn on gravity or a center of mass that attracts the balls.
+
+## Architecture and technical decisions
+
+The code is split by responsibility: `physics.c` (integration, collisions, center of mass), `objects.c`, `graphics.c`, `input.c`, and a `state.h` with the simulation state.
+
+The collision between two balls is resolved by an impulse along the contact normal $\hat{n}$. With normal relative velocity $v_{rel} = (\vec{v}_b - \vec{v}_a)\cdot\hat{n}$ and coefficient of restitution $e$ (entered by the user at startup):
+
+$$
+J = \frac{-(1+e)\,v_{rel}}{\dfrac{1}{m_a} + \dfrac{1}{m_b}}, \qquad
+\vec{v}_a \leftarrow \vec{v}_a - \frac{J}{m_a}\hat{n}, \qquad
+\vec{v}_b \leftarrow \vec{v}_b + \frac{J}{m_b}\hat{n}
+$$
+
+If $v_{rel} > 0$ the balls are already moving apart and no impulse is applied, which keeps them from getting stuck to each other.
+
+## Implementation
+
+The center of mass is recomputed every frame as a weighted average of positions and velocities. The collision sound volume is proportional to the magnitude of the relative velocity, capped at the SDL_mixer maximum.
+
+<Figure src={shot} alt="Simulator with several colored balls colliding" caption="Simulation running." />
+
+## Results and next steps
+
+Interactive simulation with pause, shuffle, adding and removing balls, and vector display. The code was revised in 2025, after the course.

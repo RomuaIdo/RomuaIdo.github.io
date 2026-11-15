@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import DomainTag from './DomainTag.astro';
 import type { Lang } from '../i18n/ui';
 import { entrySlug, projectHref, useTranslations } from '../i18n/utils';
+import { projectState, stateLabel, yearLabel } from '../lib/timeline';
 
 interface Props {
   lang: Lang;
@@ -44,8 +45,8 @@ const t = useTranslations(lang);
             </ul>
           </td>
           <td class="year">
-            {p.data.year}
-            {p.data.status === 'active' && <span class="block text-xs text-muted">{t('status.active')}</span>}
+            {yearLabel(p.data)}
+            {projectState(p.data) !== 'done' && <span class="block text-xs text-muted">{stateLabel(p.data, lang)}</span>}
           </td>
         </tr>
       ))

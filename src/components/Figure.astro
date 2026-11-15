@@ -8,12 +8,14 @@ interface Props {
   alt: string;
   caption?: string;
   width?: number;
+  // Caps the rendered width for tall images such as diagrams.
+  narrow?: boolean;
 }
 
-const { src, alt, caption, width = 1200 } = Astro.props;
+const { src, alt, caption, width = 1200, narrow = false } = Astro.props;
 ---
 
-<figure class="my-6">
+<figure class:list={['my-6', narrow && 'mx-auto max-w-xs']}>
   <Image src={src} alt={alt} width={Math.min(width, src.width)} format="webp" loading="lazy" decoding="async" class="h-auto w-full rounded border border-rule" />
   {caption && <figcaption class="mt-2 text-sm text-muted">{caption}</figcaption>}
 </figure>

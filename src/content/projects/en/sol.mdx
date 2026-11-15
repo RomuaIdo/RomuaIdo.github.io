@@ -1,28 +1,25 @@
 ---
-title: SOL — Location Occupancy System
-summary: Web platform for booking and managing rooms at the UTFPR Curitiba campus, replacing email requests with self-service and approval by the room manager.
+title: SOL — Room Occupancy System
+summary: Web platform for booking and managing rooms at the UTFPR Curitiba Campus, replacing email requests with self-service and approval by the room manager.
 domain: software
 stack: [React 19, TypeScript, Vite, React Router, Java 17, Spring Boot 3]
-year: '2026'
-period: 05/2026 – 06/2026
-status: active
-role: Front-end business rules — role hierarchy, coverage of all use cases, per-role dashboard, project registration and the group availability heat map.
+start: '2026-05'
+end: '2026-06'
+role: Back-end and front-end architecture and part of the coding — role hierarchy, use case coverage, per-role dashboard, and availability heat map.
 team:
-  - { name: Arthur G. P. Heberle, github: Arthur-Heberle }
-  - { name: Luiz Henrique de Souza Correia }
-  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes }
+  - { name: Arthur G. P. Heberle, github: Arthur-Heberle, confirmed: true }
+  - { name: Luiz Henrique de Souza Correia, confirmed: true }
+  - { name: Rafael de Andrade Fernandes, github: Rafael-de-Andrade-Fernandes, confirmed: true }
 repos:
   - { label: Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais, url: 'https://github.com/Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais' }
 order: 5
 ---
 
-{/* TODO: confirm course name and team credit. */}
-
 ## Context and problem
 
-At Campus Curitiba Sede Centro, booking a room depends on email or going in person to the person in charge. Professors, project students and tutors have no way to see occupancy before asking. SOL is a self-service platform: each user sees the schedule grid, requests the booking, and the room manager approves or rejects it.
+At the Curitiba Campus Sede Centro, booking a room depends on email or going in person to the person in charge. Professors, project students, and tutors have no way to see occupancy before asking. SOL is a self-service platform: each user sees the schedule, requests the booking, and the room manager approves or rejects it.
 
-The project was specified before being coded: a project plan with requirements, twelve use cases, class, communication, state and activity diagrams, and a data dictionary.
+The project was specified before being coded: a project plan with requirements, twelve use cases, class, communication, state, and activity diagrams, and a data dictionary.
 
 ## Architecture and technical decisions
 
@@ -30,28 +27,26 @@ The project was specified before being coded: a project plan with requirements, 
  ALUNO  <  PROFESSOR  <  TUTOR  <  GESTOR
    |           |           |          |
    |           |           |          +-- approves/rejects bookings and projects,
-   |           |           |              maintains users, rooms and courses
+   |           |           |              maintains users, rooms, and courses
    |           |           +-- registers projects, tracks own requests
    |           +-- books rooms (day or semester), tracks own requests
-   +-- views the grid; as a project member, reports free time slots
+   +-- views the schedule; as a project member, reports free time slots
 ```
-
-Role names are code identifiers: ALUNO (student), PROFESSOR (professor), TUTOR (tutor), GESTOR (room manager).
 
 **Roles as an ordered hierarchy.** Permissions follow a single ranking (`ALUNO < PROFESSOR < TUTOR < GESTOR`), so each check is a comparison, not a list of exceptions scattered across the screens. A protected route declares the minimum role.
 
-**Front end first, with a services layer.** Pages talk only to typed services (`salaService`, `reservaService`, `projetoService`, ...). In this phase the services use a mock database persisted in `localStorage`; the Java 17 + Spring Boot 3 API is planned and will go in behind the same interface, without rewriting the screens.
+**Front end first, with a service layer.** Pages talk only to typed services (`salaService`, `reservaService`, `projetoService`, ...). In this phase the services use a mock database persisted in `localStorage`; the Java 17 + Spring Boot 3 API is planned and will go in behind the same interface, without rewriting the screens.
 
 **Daily and semester bookings as distinct flows.** A one-day booking can be confirmed directly; a semester booking always generates a pending request for the manager.
 
 ## Implementation
 
-My contribution focused on the business rules:
+I was responsible for the back-end and front-end architecture, including the separation between pages and services described above, and for part of the coding, concentrated on the business rules:
 
-- Fix of the role hierarchy and of dashboard access: the manager handles all requests; professor and tutor only track their own, in read-only mode. Only the manager sees the approve and reject buttons.
+- Fix of the role hierarchy and dashboard access: the manager handles all requests; professors and tutors track only their own, in read-only mode. Only the manager sees the approve and reject buttons.
 - Coverage of all use cases in the specification, including project registration by tutors and the option for the creator to join as project manager.
 - Heat map of group availability, crossing the free time slots reported by the members of a project.
-- Adjustments to the booking modal (separate date and time) and a migration of the mock database that adds new test users without erasing the data already saved in the browser.
+- Adjustments to the booking modal (separate date and time) and a mock database migration that adds new test users without erasing data already saved in the browser.
 
 <MediaPlaceholder what="Screenshot of the room map with filter and booking modal" />
 
@@ -59,5 +54,5 @@ My contribution focused on the business rules:
 
 ## Results and next steps
 
-- Working front end with role-based login, room map, daily and semester bookings, approval, project registration and management of users, rooms and courses.
+- Working front end with role-based login, room map, daily and semester bookings, approval, project registration, and management of users, rooms, and courses.
 - Next step: implement the Spring Boot 3 back end and replace the mock database with the real API.

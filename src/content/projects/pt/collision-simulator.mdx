@@ -1,0 +1,44 @@
+---
+title: Simulador de colisões
+summary: Simulador 2D em C e SDL2 de colisões entre bolas por impulso, com coeficiente de restituição, gravidade, centro de massa atrator e som proporcional à velocidade relativa.
+domain: simulation
+stack: [C, SDL2, SDL2_ttf, SDL2_mixer, Make]
+start: '2024-06'
+end: '2024-07'
+context: Física Teórica, UTFPR
+featured: false
+role: Projeto individual.
+repos:
+  - { label: RomuaIdo/CollisionSimulator, url: 'https://github.com/RomuaIdo/CollisionSimulator' }
+order: 12
+---
+
+import shot from '../../../assets/projects/collision-simulator.png';
+
+## Contexto e problema
+
+Visualizar conservação de momento e colisões elásticas e inelásticas: várias bolas com massas aleatórias colidindo entre si e com as bordas, com controles para ligar a gravidade ou um centro de massa que atrai as bolas.
+
+## Arquitetura e decisões técnicas
+
+O código é separado por responsabilidade: `physics.c` (integração, colisões, centro de massa), `objects.c`, `graphics.c`, `input.c` e um `state.h` com o estado da simulação.
+
+A colisão entre duas bolas é resolvida por impulso ao longo da normal de contato $\hat{n}$. Com velocidade relativa normal $v_{rel} = (\vec{v}_b - \vec{v}_a)\cdot\hat{n}$ e coeficiente de restituição $e$ (informado pelo usuário ao iniciar):
+
+$$
+J = \frac{-(1+e)\,v_{rel}}{\dfrac{1}{m_a} + \dfrac{1}{m_b}}, \qquad
+\vec{v}_a \leftarrow \vec{v}_a - \frac{J}{m_a}\hat{n}, \qquad
+\vec{v}_b \leftarrow \vec{v}_b + \frac{J}{m_b}\hat{n}
+$$
+
+Se $v_{rel} > 0$ as bolas já estão se afastando e nenhum impulso é aplicado, o que evita que fiquem presas uma na outra.
+
+## Implementação
+
+O centro de massa é recalculado a cada quadro como média ponderada das posições e velocidades. O volume do som de colisão é proporcional ao módulo da velocidade relativa, limitado ao máximo do SDL_mixer.
+
+<Figure src={shot} alt="Simulador com várias bolas coloridas colidindo" caption="Simulação em execução." />
+
+## Resultados e próximos passos
+
+Simulação interativa com pausa, embaralhamento, adição e remoção de bolas e exibição de vetores. O código foi revisado em 2025, depois da disciplina.

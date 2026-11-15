@@ -1,0 +1,51 @@
+---
+title: ESP-NOW AMI
+summary: Two ESP32-S3 boards encode messages in pseudo-ternary AMI and send them over ESP-NOW to a master, which forwards them to the PC; a Node.js server draws the waveforms in the browser.
+domain: communication
+stack: [ESP32-S3, C++, PlatformIO, ESP-NOW, Node.js, Serial]
+start: '2026-06'
+end: '2026-06'
+context: Data Communication (Comunicação de Dados), UTFPR
+featured: false
+role: Individual project — master and slave firmware and the two web interfaces.
+repos:
+  - { label: RomuaIdo/esp-now-ami, url: 'https://github.com/RomuaIdo/esp-now-ami' }
+order: 10
+---
+
+## Context and problem
+
+Demonstrate, with real hardware, a line code studied in the course: pseudo-ternary AMI, in which information is carried by pulses of alternating polarity, and not by two fixed levels.
+
+## Architecture and technical decisions
+
+```ascii title="Topology"
+ [Slave 1] --ESP-NOW--+
+                      +--> [Master] --USB Serial--> PC: website/ (:3000)
+ [Slave 2] --ESP-NOW--+
+
+ PC slave --USB Serial--> [Slave n]    website-slave/ (:3001, :3002)
+```
+
+- **Encoding:** bit `0` alternates between $+V$ and $-V$; bit `1` stays at $0$ V. Alternating the polarity of the zeros keeps the average signal level at zero.
+- **Symmetric XOR cipher** applied to the message before encoding, to show the encrypted and decrypted message in the interface.
+- **One firmware for both slaves**, distinguished by `SLAVE_ID` as a build flag in `platformio.ini`. The master's MAC also comes in as a build flag.
+
+## Implementation
+
+```cpp
+// 0-bit -> alternates +1 / -1 ; 1-bit -> level 0
+static uint8_t amiEncode(const uint8_t* bytes, uint8_t byteLen, int8_t* out) {
+    uint8_t count    = 0;
+    int8_t  polarity = 1;   // first '0' bit becomes +1
+    // ...
+}
+```
+
+The master is an ESP32-S3 SuperMini that only routes between ESP-NOW and Serial. On the PC, each slave's interface shows a waveform preview while the message is typed; the master's shows, per slave, the AMI waveform, the decoded bits, the bytes in hexadecimal, and the encrypted and decrypted message.
+
+<MediaPlaceholder what="Screenshot of the master interface with the waveforms of the two slaves" />
+
+## Results and next steps
+
+System working with one master and two slaves, with real-time visualization. A natural extension is to detect code violations (two consecutive zeros with the same polarity) at the receiver.

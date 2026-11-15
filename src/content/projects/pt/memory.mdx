@@ -1,0 +1,53 @@
+---
+title: Jogo da memória em FPGA
+summary: Jogo de memória e sequência em VHDL na placa DE10-Lite (Intel MAX 10), com máquina de estados, padrões pseudoaleatórios, vidas, pontuação e dificuldade crescente.
+domain: digital
+stack: [VHDL, Quartus Prime Lite, Intel MAX 10, DE10-Lite, Questa]
+start: '2026-02'
+end: '2026-04'
+context: Circuitos Digitais, UTFPR
+featured: false
+role: Projeto individual — arquitetura, VHDL, síntese e testes na placa.
+repos:
+  - { label: RomuaIdo/memory, url: 'https://github.com/RomuaIdo/memory' }
+order: 11
+---
+
+import board from '../../../assets/projects/memory-board.jpg';
+import fsm from '../../../assets/projects/memory-fsm.png';
+
+## Contexto e problema
+
+Projetar um sistema digital completo em hardware, e não só blocos isolados: o jogo acende um padrão nos 10 LEDs da placa e o jogador precisa reproduzi-lo nas chaves antes de o tempo acabar.
+
+## Arquitetura e decisões técnicas
+
+```ascii title="Blocos do topo (Memory.vhd)"
+ chaves, botões ---> +-----------------+ ---> LEDs (padrão)
+ Leds (PRNG) ------> | Game_Controller |
+ Timer ------------> |      (FSM)      |
+                     +--------+--------+
+                              |
+                              v
+             Bin_to_dec / Bin_to_dec_2dig
+                              |
+                              v
+           displays de 7 segmentos
+           (pontos, vidas, velocidade)
+```
+
+- **Aleatoriedade pelo tempo de reação:** um contador de alta frequência roda livre, e o valor é capturado no instante da interação do jogador. Gera padrões de 10 bits imprevisíveis sem um LFSR.
+- **Timer paramétrico:** um divisor de frequência controla por quanto tempo o padrão fica visível; a velocidade sobe a cada três acertos seguidos.
+- **Pontuação proporcional à velocidade** e três vidas, exibidas em displays de 7 segmentos (ativos em nível baixo).
+
+## Implementação
+
+A lógica do jogo é uma máquina de estados com `START`, `GEN_PATTERN`, `SHOW_LEDS`, `WAIT_INPUT`, `CHECK_RESULT` e `GAME_OVER`.
+
+<Figure src={fsm} alt="Diagrama de estados do Game_Controller" caption="Diagrama de estados do Game_Controller." width={551} narrow />
+
+## Resultados e próximos passos
+
+Sintetizado no Quartus Prime Lite e testado na DE10-Lite.
+
+<Figure src={board} alt="Jogo da memória rodando na placa DE10-Lite" caption="O jogo rodando na DE10-Lite." />
