@@ -2,10 +2,10 @@
 import Base from '../layouts/Base.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import BenchList from '../components/BenchList.astro';
-import CourseworkList from '../components/CourseworkList.astro';
+import MinorProjects from '../components/MinorProjects.astro';
 import type { Lang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
-import { getBench, getCoursework, getFeatured } from '../lib/content';
+import { getBench, getMinor, getFeatured } from '../lib/content';
 
 interface Props {
   lang: Lang;
@@ -26,9 +26,9 @@ const intro = kind === 'projects' ? t('projects.intro') : t('bench.intro');
       kind === 'projects' ? (
         <>
           <ProjectIndex lang={lang} projects={await getFeatured(lang)} />
-          <h2 class="mt-16 mb-2 text-xl font-bold">{t('coursework.title')}</h2>
-          <p class="mb-6 text-muted">{t('coursework.intro')}</p>
-          <CourseworkList lang={lang} projects={await getCoursework(lang)} />
+          <h2 class="mt-16 mb-2 text-xl font-bold">{t('minor.title')}</h2>
+          <p class="mb-6 text-muted">{t('minor.intro')}</p>
+          <MinorProjects lang={lang} projects={await getMinor(lang)} />
         </>
       ) : (
         <BenchList lang={lang} entries={await getBench(lang)} />

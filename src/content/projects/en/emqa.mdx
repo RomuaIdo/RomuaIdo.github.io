@@ -5,7 +5,7 @@ domain: iot
 stack: [ESP32-S3, C++, Arduino, Python, Flask, Vue.js, PrimeVue, EasyEDA]
 start: '2025-05'
 end: '2025-06'
-context: Oficina de Integração 1, Computer Engineering, UTFPR
+context: Oficinas de Integração 1, Computer Engineering, UTFPR
 role: ESP32 software (sensor reading and calibration, custom libraries, unified code, and sending data to the server) and part of the front end and back end.
 team:
   - { name: Felipe Sledz Ferreira, confirmed: true }
@@ -15,6 +15,10 @@ repos:
   - { label: gabriel-arriello/emqa-estacao-qualidade-ambiental, url: 'https://github.com/gabriel-arriello/emqa-estacao-qualidade-ambiental' }
 order: 4
 ---
+
+import station from '../../../assets/projects/emqa/station.jpg';
+import pcb from '../../../assets/projects/emqa/pcb.jpg';
+import dashboard from '../../../assets/projects/emqa/dashboard.png';
 
 ## Context and problem
 
@@ -75,9 +79,11 @@ Without a controlled gas chamber, the coefficients $a$ and $b$ were fitted from 
 
 The MAX9814 outputs an analog signal proportional to sound pressure, with automatic gain control, which does not map directly to decibels. A logarithmic conversion was applied, with coefficients estimated empirically against a smartphone sound level meter.
 
-<MediaPlaceholder what="Photo of the assembled EMQA and the PCB (front and back)" note="Figures 5 and 7 of the team's paper." />
+<Figure src={station} alt="EMQA station mounted in a transparent plastic enclosure on a wooden stand" caption="The EMQA assembled in its enclosure." />
 
-<MediaPlaceholder what="Screenshot of the web dashboard" note="Figure 6 of the paper." />
+<Figure src={pcb} alt="Homemade EMQA PCB: copper side on the left and component side with the ESP32-S3 and sensors on the right" caption="PCB fabricated by the team, back and front." />
+
+<Figure src={dashboard} alt="Web dashboard with temperature, humidity, a pollutant table with classification, and charts per parameter" caption="Vue dashboard with the indices and charts per parameter." size="md" />
 
 ## Results and next steps
 

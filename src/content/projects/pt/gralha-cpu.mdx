@@ -5,7 +5,7 @@ domain: hardware
 stack: [VHDL-2008, GHDL, GTKWave, Make]
 start: '2026-04'
 end: '2026-06'
-context: Arquitetura de Computadores, UTFPR
+context: Arquitetura e Organização de Computadores, UTFPR
 role: ULA, banco de registradores, datapath, unidade de controle, integração do topo (MPU), RAM com endereçamento relativo e as instruções BCC, CTZ e SLL.
 team:
   - { name: Rafael Fernandes, github: Rafael-de-Andrade-Fernandes, confirmed: true }
@@ -13,6 +13,8 @@ repos:
   - { label: RomuaIdo/gralha-cpu, url: 'https://github.com/RomuaIdo/gralha-cpu' }
 order: 3
 ---
+
+import gtkwave from '../../../assets/projects/gralha-cpu/gtkwave-sieve.png';
 
 ## Contexto e problema
 
@@ -102,7 +104,7 @@ sieve:               ; clear multiples of the current prime
 
 Ao final, as posições não nulas da RAM entre 2 e 127 são os primos.
 
-<MediaPlaceholder what="Forma de onda do GTKWave da execução do crivo" note="Captura do mpu_tb mostrando PC, estado, acumulador e escritas na RAM (configuração em mpu.gtkw)." />
+<Figure src={gtkwave} alt="GTKWave com os sinais clk, rst, ram_addr e ram_data do mpu_tb durante a execução do crivo" caption="Simulação do mpu_tb no GTKWave: endereços e dados da RAM durante o crivo." />
 
 ### Verificação
 

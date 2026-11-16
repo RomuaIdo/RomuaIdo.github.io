@@ -14,6 +14,9 @@ repos:
 order: 6
 ---
 
+import level from '../../../assets/projects/brasilore/level.png';
+import menu from '../../../assets/projects/brasilore/menu.png';
+
 ## Context and problem
 
 The game was the vehicle; the goal was the architecture: a well-defined class hierarchy, deliberate use of design patterns, persistence of the game state, and a one- or two-player mode. The levels, *Cuca's Forest* and *Mule's Pasture*, use characters from Brazilian folklore.
@@ -59,12 +62,13 @@ void saveScoretoLeaderboard();
 
 The `Makefile` detects the operating system and builds on both Linux and Windows (MSYS2 UCRT64), statically linking SFML to the GCC runtime on Windows.
 
-<MediaPlaceholder what="Screenshot of a level in play" />
+<Figure src={level} alt="Pixel art forest level with players and enemies on the ground" caption="A level in play." />
 
-<MediaPlaceholder what="Screenshot of the main menu and the leaderboard" />
+<Figure src={menu} alt="Brasilore main menu with the New Game, Load Game, and LeaderBoard options over mountains" caption="Main menu." />
 
 ## Results and next steps
 
 - Game delivered with two levels, one- and two-player modes, saving, and a leaderboard.
 - After delivery, the code was migrated from SFML 2 to SFML 3.
+- Since 2025/2, I teach the support workshops for this course at PETECO; its final project is a game (see [About](/en/about/)).
 - A possible next step: replace the custom linked list with standard library containers where it is not a project requirement.

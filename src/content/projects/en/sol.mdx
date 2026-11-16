@@ -5,6 +5,7 @@ domain: software
 stack: [React 19, TypeScript, Vite, React Router, Java 17, Spring Boot 3]
 start: '2026-05'
 end: '2026-06'
+context: Systems Analysis and Design (Análise e Projeto de Sistemas), UTFPR
 role: Back-end and front-end architecture and part of the coding — role hierarchy, use case coverage, per-role dashboard, and availability heat map.
 team:
   - { name: Arthur G. P. Heberle, github: Arthur-Heberle, confirmed: true }
@@ -14,6 +15,9 @@ repos:
   - { label: Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais, url: 'https://github.com/Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais' }
 order: 5
 ---
+
+import roomMap from '../../../assets/projects/sol/room-map.png';
+import heatmap from '../../../assets/projects/sol/availability-heatmap.png';
 
 ## Context and problem
 
@@ -48,9 +52,9 @@ I was responsible for the back-end and front-end architecture, including the sep
 - Heat map of group availability, crossing the free time slots reported by the members of a project.
 - Adjustments to the booking modal (separate date and time) and a mock database migration that adds new test users without erasing data already saved in the browser.
 
-<MediaPlaceholder what="Screenshot of the room map with filter and booking modal" />
+<Figure src={roomMap} alt="Room map with date, block, and type filters and the booking modal for room A-101 open" caption="Room map with the booking modal." />
 
-<MediaPlaceholder what="Screenshot of a project's availability heat map" />
+<Figure src={heatmap} alt="Individual availability grid next to the group heat map, with the best time slots highlighted" caption="Individual availability and group heat map." />
 
 ## Results and next steps
 

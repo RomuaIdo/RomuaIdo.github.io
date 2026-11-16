@@ -6,6 +6,8 @@ year: '2026'
 order: 2
 ---
 
+import board from '../../../assets/bench/stlink-ldo/board.jpg';
+
 ## Symptom
 
 The programmer enumerated on USB, but failed to program some microcontrollers. Measuring the board's 3.3 V rail, the output was at **2.3 V**.
@@ -23,7 +25,7 @@ With the USB 5 V input normal and the regulator output low, suspicion fell on th
 | Nominal output | 3.3 V | 3.3 V |
 | Package | SOT-23-5 | SOT-23-5 |
 
-<MediaPlaceholder what="Photo of the board with the SOT-23-5 regulator identified" ratio="4 / 3" />
+<Figure src={board} alt="ST-Link V2 clone board on a cutting mat, with the LDO regulator highlighted" caption="ST-Link board with the LDO highlighted." />
 
 ## Repair
 

@@ -5,7 +5,7 @@ domain: hardware
 stack: [VHDL-2008, GHDL, GTKWave, Make]
 start: '2026-04'
 end: '2026-06'
-context: Computer Architecture (Arquitetura de Computadores), UTFPR
+context: Computer Architecture and Organization (Arquitetura e Organização de Computadores), UTFPR
 role: ALU, register file, datapath, control unit, top-level integration (MPU), RAM with relative addressing, and the BCC, CTZ, and SLL instructions.
 team:
   - { name: Rafael Fernandes, github: Rafael-de-Andrade-Fernandes, confirmed: true }
@@ -13,6 +13,8 @@ repos:
   - { label: RomuaIdo/gralha-cpu, url: 'https://github.com/RomuaIdo/gralha-cpu' }
 order: 3
 ---
+
+import gtkwave from '../../../assets/projects/gralha-cpu/gtkwave-sieve.png';
 
 ## Context and problem
 
@@ -102,7 +104,7 @@ sieve:               ; clear multiples of the current prime
 
 At the end, the nonzero RAM positions between 2 and 127 are the primes.
 
-<MediaPlaceholder what="GTKWave waveform of the sieve execution" note="Capture of mpu_tb showing PC, state, accumulator, and RAM writes (configuration in mpu.gtkw)." />
+<Figure src={gtkwave} alt="GTKWave with the clk, rst, ram_addr, and ram_data signals of mpu_tb during the sieve execution" caption="mpu_tb simulation in GTKWave: RAM addresses and data during the sieve." />
 
 ### Verification
 

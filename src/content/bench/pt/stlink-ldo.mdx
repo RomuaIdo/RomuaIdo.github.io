@@ -6,6 +6,8 @@ year: '2026'
 order: 2
 ---
 
+import board from '../../../assets/bench/stlink-ldo/board.jpg';
+
 ## Sintoma
 
 O gravador enumerava no USB, mas falhava ao programar alguns microcontroladores. Medindo a linha de 3,3 V da placa, a saída estava em **2,3 V**.
@@ -23,7 +25,7 @@ Com a entrada de 5 V do USB normal e a saída do regulador baixa, a suspeita rec
 | Saída nominal | 3,3 V | 3,3 V |
 | Encapsulamento | SOT-23-5 | SOT-23-5 |
 
-<MediaPlaceholder what="Foto da placa com o regulador SOT-23-5 identificado" ratio="4 / 3" />
+<Figure src={board} alt="Placa do clone de ST-Link V2 sobre base de corte, com o regulador LDO destacado" caption="Placa do ST-Link com o LDO destacado." />
 
 ## Reparo
 

@@ -59,7 +59,7 @@ const chips: string[] = kind === 'projects' ? entry.data.stack : entry.data.tags
                     <dd>
                       <ul>
                         {p.team.map((m) => (
-                          <li>{m.github ? <a href={`https://github.com/${m.github}`}>{m.name}</a> : m.name}</li>
+                          <li>{m.url || m.github ? <a href={m.url ?? `https://github.com/${m.github}`}>{m.name}</a> : m.name}</li>
                         ))}
                       </ul>
                     </dd>

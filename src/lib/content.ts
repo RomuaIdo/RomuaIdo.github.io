@@ -11,7 +11,7 @@ export async function getFeatured(lang: Lang) {
   return (await getProjects(lang)).filter((p) => p.data.featured);
 }
 
-export async function getCoursework(lang: Lang) {
+export async function getMinor(lang: Lang) {
   return (await getProjects(lang)).filter((p) => !p.data.featured);
 }
 

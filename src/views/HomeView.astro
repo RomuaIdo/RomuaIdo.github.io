@@ -3,11 +3,11 @@ import Base from '../layouts/Base.astro';
 import SignalHero from '../components/SignalHero.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import BenchList from '../components/BenchList.astro';
-import CourseworkList from '../components/CourseworkList.astro';
+import MinorProjects from '../components/MinorProjects.astro';
 import { site } from '../config/site';
 import { routes, type Lang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
-import { getBench, getCoursework, getFeatured } from '../lib/content';
+import { getBench, getMinor, getFeatured } from '../lib/content';
 
 interface Props {
   lang: Lang;
@@ -16,7 +16,7 @@ interface Props {
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 const projects = await getFeatured(lang);
-const coursework = await getCoursework(lang);
+const minor = await getMinor(lang);
 const bench = await getBench(lang);
 ---
 
@@ -41,12 +41,12 @@ const bench = await getBench(lang);
     <ProjectIndex lang={lang} projects={projects} />
   </section>
 
-  <section class="mt-16" aria-labelledby="coursework">
+  <section class="mt-16" aria-labelledby="minor">
     <div class="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-      <h2 id="coursework" class="text-xl font-bold">{t('coursework.title')}</h2>
-      <p class="text-muted">{t('coursework.intro')}</p>
+      <h2 id="minor" class="text-xl font-bold">{t('minor.title')}</h2>
+      <p class="text-muted">{t('minor.intro')}</p>
     </div>
-    <CourseworkList lang={lang} projects={coursework} />
+    <MinorProjects lang={lang} projects={minor} />
   </section>
 
   <section class="mt-20" aria-labelledby="bench">

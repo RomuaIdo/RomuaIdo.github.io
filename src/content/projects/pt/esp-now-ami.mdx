@@ -13,6 +13,8 @@ repos:
 order: 10
 ---
 
+import masterUi from '../../../assets/projects/esp-now-ami/master-ui.png';
+
 ## Contexto e problema
 
 Demonstrar, com hardware real, um código de linha estudado na disciplina: o AMI pseudo-ternário, em que a informação é levada pelos pulsos de polaridade alternada, e não por dois níveis fixos.
@@ -42,10 +44,10 @@ static uint8_t amiEncode(const uint8_t* bytes, uint8_t byteLen, int8_t* out) {
 }
 ```
 
-O master é uma ESP32-S3 SuperMini que só roteia entre ESP-NOW e Serial. No PC, a interface de cada slave mostra uma prévia da forma de onda enquanto a mensagem é digitada; a do master exibe, por slave, a forma de onda AMI, os bits decodificados, os bytes em hexadecimal e a mensagem cifrada e decifrada.
+O master é uma ESP32-S3 SuperMini que só roteia entre ESP-NOW e Serial. No PC, as interfaces imitam um instrumento de bancada. A de cada slave mostra uma prévia da forma de onda enquanto a mensagem é digitada. A do master tem um canal por slave com a forma de onda AMI, um cursor para medir bit a bit, a contagem de marcas em $+V$ e $-V$ e de espaços em $0$ V, o nível DC, as violações de código (duas marcas seguidas com a mesma polaridade) e uma tabela byte a byte com texto, hexadecimal, chave, cifra e binário.
 
-<MediaPlaceholder what="Captura da interface do master com as formas de onda das duas slaves" />
+<Figure src={masterUi} alt="Interface do master com dois canais, um por slave, cada um com o osciloscópio AMI, as medições e a tabela byte a byte" caption="Interface do master, um canal por slave." />
 
 ## Resultados e próximos passos
 
-Sistema funcionando com um master e duas slaves, com visualização em tempo real. Uma extensão natural é detectar violações de código (dois zeros seguidos com a mesma polaridade) no receptor.
+Sistema funcionando com um master e duas slaves, com visualização em tempo real. A interface do master já mede o nível DC e aponta violações de código, o que permite verificar na tela as propriedades do AMI estudadas na disciplina.

@@ -14,6 +14,9 @@ repos:
 order: 6
 ---
 
+import level from '../../../assets/projects/brasilore/level.png';
+import menu from '../../../assets/projects/brasilore/menu.png';
+
 ## Contexto e problema
 
 O jogo era o veículo; o objetivo era a arquitetura: uma hierarquia de classes bem definida, uso deliberado de padrões de projeto, persistência do estado do jogo e modo para um ou dois jogadores. As fases, *Floresta da Cuca* e *Pasto da Mula*, usam personagens do folclore brasileiro.
@@ -59,12 +62,13 @@ void saveScoretoLeaderboard();
 
 O `Makefile` detecta o sistema operacional e compila tanto no Linux quanto no Windows (MSYS2 UCRT64), ligando a SFML estaticamente ao runtime do GCC no Windows.
 
-<MediaPlaceholder what="Captura de tela de uma fase em jogo" />
+<Figure src={level} alt="Fase de floresta em pixel art com jogadores e inimigos sobre o chão" caption="Uma fase em jogo." />
 
-<MediaPlaceholder what="Captura do menu principal e do placar" />
+<Figure src={menu} alt="Menu principal do Brasilore com as opções New Game, Load Game e LeaderBoard sobre montanhas" caption="Menu principal." />
 
 ## Resultados e próximos passos
 
 - Jogo entregue com duas fases, modo para um e dois jogadores, salvamento e placar.
 - Após a entrega, o código foi migrado da SFML 2 para a SFML 3.
+- Desde 2025/2, ministro no PETECO as oficinas de apoio a essa disciplina, que tem um jogo como trabalho final (ver [Sobre](/sobre/)).
 - Próximo passo possível: trocar a lista encadeada própria por contêineres da biblioteca padrão onde ela não for exigência do projeto.

@@ -8,6 +8,8 @@ repos:
 order: 4
 ---
 
+import app from '../../../assets/bench/drawer/app.png';
+
 ## Problem
 
 With dozens of component drawers, finding where a 10 kΩ 0805 resistor is, or how many regulators are left, became a manual search.
@@ -26,4 +28,4 @@ Desktop app that represents the cabinet as blocks of drawers (4×4, 3×3 or 1×1
 
 C++17 with Qt 6 (Widgets, Sql and Test) and CMake. The data lives in a SQLite database in the app's data directory. The domain logic is a separate library (`drawer_core`), tested with Qt Test via `ctest`.
 
-<MediaPlaceholder what="Screenshot of the app with the cabinet and the item list" />
+<Figure src={app} alt="Drawer window with the cabinet as blocks of labeled drawers and the item panel on the right" caption="The cabinet and the item panel." />

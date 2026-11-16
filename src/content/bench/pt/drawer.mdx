@@ -8,6 +8,8 @@ repos:
 order: 4
 ---
 
+import app from '../../../assets/bench/drawer/app.png';
+
 ## Problema
 
 Com dezenas de gavetas de componentes, saber onde está um resistor de 10 kΩ em 0805 ou quantos reguladores sobraram virava busca manual.
@@ -26,4 +28,4 @@ Aplicativo desktop que representa o gaveteiro como blocos de gavetas (4×4, 3×3
 
 C++17 com Qt 6 (Widgets, Sql e Test) e CMake. Os dados ficam em um banco SQLite no diretório de dados do aplicativo. A lógica de domínio é uma biblioteca separada (`drawer_core`), testada com Qt Test via `ctest`.
 
-<MediaPlaceholder what="Captura do aplicativo com o gaveteiro e a lista de itens" />
+<Figure src={app} alt="Janela do Drawer com o gaveteiro em blocos de gavetas rotuladas e o painel de itens à direita" caption="O gaveteiro e o painel de itens." />

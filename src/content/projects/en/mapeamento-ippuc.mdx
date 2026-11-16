@@ -2,64 +2,110 @@
 title: Urban road marking mapping
 summary: Oriented bounding box (OBB) detection pipeline for road markings and urban elements in high-resolution aerial orthophotos of Curitiba, in partnership with IPPUC.
 domain: vision
-stack: [Python, YOLO11-OBB, YOLO26-OBB, Ultralytics, rasterio, geopandas, X-AnyLabeling]
+stack: [Python, YOLO26-OBB, YOLO11-OBB, Ultralytics, rasterio, geopandas, X-AnyLabeling, OpenStreetMap]
 start: '2026-06'
 end: '2026-12'
 context: AP[x], UTFPR + IPPUC outreach project, Task 4
-role: Literature review and structuring of training, testing, and techniques to improve the computer vision model (YOLO26-OBB).
-team: []
+role: Model evolution — literature review, structuring of training and testing cycles, YOLO11 × YOLO26 comparison, augmentation, OSM as pre-annotation, and tuning.
+team:
+  - { name: Omar Zagonel El Laden, url: 'https://gitlab.com/omarelladen', confirmed: true }
+  - { name: Chan Hong Lik, confirmed: true }
+  - { name: Nicolas Almeida de Paula, confirmed: true }
 repos: []
 order: 2
 ---
 
-{/* TODO: add team names and repository link once cleared for publication. */}
+import detection from '../../../assets/projects/mapeamento-ippuc/detection.png';
+import annotation from '../../../assets/projects/mapeamento-ippuc/annotation.png';
 
 ## Context and problem
 
-The Curitiba Urban Planning and Research Institute (IPPUC) maintains high-resolution aerial orthophotos of the city. Inventorying road markings (crosswalks, arrows, stop lines) and other urban elements from these images is slow, manual work. Task 4 of AP[x] investigates an automatic detection pipeline that produces georeferenced layers usable by urban planning.
+The Curitiba Urban Planning and Research Institute (IPPUC) maintains high-resolution aerial orthophotos of the city. Inventorying road markings (crosswalks, arrows, stop lines) and other urban elements from these images is slow, manual work. Task 4 of AP[x] investigates an automatic detection pipeline that produces georeferenced layers for urban planning.
 
 ## Architecture and technical decisions
 
 ```ascii title="Pipeline"
- orthophoto (GeoTIFF)
+ orthophoto (GeoTIFF, 8 cm/px, EPSG:31982)
         |
         v
- tile cropping  --------------------->  OBB annotation (X-AnyLabeling)
- (rasterio)                                     |
-        |                                       v
-        |                            YOLO11-OBB / YOLO26-OBB training
-        v                                       |
- per-tile inference  <--------------------------+
+ road mask + tiles  ------------------->  pre-annotation (model + OSM)
+ (rasterio)                                          |
+        |                                            v
+        |                                  OBB review (X-AnyLabeling)
+        |                                            |
+        |                                            v
+        |                                  YOLO11-OBB / YOLO26-OBB training
+        v                                            |
+ per-tile inference  <-------------------------------+
         |
         v
  pixel boxes --> map coordinates (raster transform)
         |
         v
- vector layer (geopandas) --> IPPUC GIS
+ vector layer (geopandas, GeoPackage) --> IPPUC GIS
 ```
 
-**Oriented boxes (OBB) instead of axis-aligned.** Crosswalks and arrows appear at any angle, following the direction of the roads. An axis-aligned box around a diagonal crosswalk encloses a lot of asphalt and overlaps its neighbors; the oriented box describes the object with four vertices and an angle.
+**Oriented boxes (OBB) instead of axis-aligned.** Crosswalks and arrows appear at any angle, following the direction of the roads. An axis-aligned box around a diagonal crosswalk encloses a lot of asphalt and overlaps its neighbors. The oriented box describes the object with four vertices and an angle.
 
-**Comparison across YOLO generations.** YOLO11-OBB and YOLO26-OBB were evaluated on the same annotated set, to choose by measured result and not by the newest version. YOLO26-OBB was adopted as the project model.
+**Comparison across YOLO generations.** YOLO11-OBB and YOLO26-OBB were evaluated on the same annotated set, with the same fixed validation split, to choose by measured result and not by the newest version. The project adopted YOLO26-OBB: it ties with YOLO11 on the original dataset, makes better use of *data augmentation*, and is lighter.
 
-**Georeferencing at the end of the pipeline.** The network works in pixel coordinates of each tile; the conversion to map coordinates uses the raster's own affine transform (`rasterio`), and the resulting geometries are assembled with `geopandas`.
+**Georeferencing at the end of the pipeline.** The network works in pixel coordinates of each tile. The conversion to map coordinates uses the raster's affine transform (`rasterio`, SIRGAS 2000 / UTM 22S), and the geometries are assembled with `geopandas` into a GeoPackage.
+
+**OpenStreetMap as pre-annotation, not as a label.** OSM crossings indicate where to look, the model proposes the boxes, and a person reviews them in X-AnyLabeling. Used directly as labels, OSM made the detector worse.
 
 ## Implementation
 
 My responsibility in Task 4 is the evolution of the model: reviewing studies on oriented detection in aerial imagery, structuring the training and testing cycles, and evaluating techniques that improve YOLO26-OBB performance on the orthophotos.
 
-<MediaPlaceholder what="Example of OBB detections over an orthophoto crop" note="Do not publish real orthophotos or detections without confirmed permission from IPPUC." />
+| Item | Value |
+|---|---|
+| Orthophoto resolution | 8 cm per pixel |
+| Training tile | 256 × 256 px RGB (≈ 20 × 20 m), with the road mask (blocks in black) |
+| Tiles in the new batches | 500 × 500 px (40 × 40 m), stride of 372 px (128 px of overlap between neighbors) |
+| Trained class | crosswalk (`ftp-1` in the new annotation batches) |
+| Proposed classes | arrows, inscriptions, stop lines, lane lines, parking spots |
+| Base dataset | 1,106 training tiles (840 with a crosswalk, 266 without) and 393 validation tiles (164 with a crosswalk, 229 without, 269 crosswalks) |
+| Crosswalk cut by the border | becomes the axis-aligned rectangle of the part that stays inside the tile |
+| Adopted model | `yolo26n-obb` (2.45 M parameters), AdamW, lr 0.002, batch 64, ≈ 10.4 thousand iterations |
+| Offline *augmentation* | dataset enriched 6× (flips, 90° and 270° rotations, and one photometric variant per tile) |
+| Training environment | Google Colab, Tesla T4, Ultralytics 8.4.163 |
 
-<MediaPlaceholder what="Example of an annotation in X-AnyLabeling" note="Use an authorized crop or a synthetic image." />
+**Tile borders.** The training tiles do not overlap, so a crosswalk cut by the border appears in two tiles, and in each one the box is clipped to the visible part. In the new inference batches, the 128 px of overlap ensures that every crosswalk appears whole in at least one tile.
 
-_Implementation details (tile size, annotated classes, handling of tile borders) to be added once what can be published is confirmed._
+<Figure src={annotation} alt="Intersection in an orthophoto with the blocks masked in black and oriented boxes over the crosswalks in X-AnyLabeling" caption="Review of oriented boxes in X-AnyLabeling, with the road mask applied." size="md" />
+
+<Figure src={detection} alt="256 px tile with an oriented box over a crosswalk and a confidence of 0.91" caption="YOLO26-OBB detection on a 256 px tile." size="sm" />
 
 ## Results and next steps
 
-| Metric | YOLO11-OBB | YOLO26-OBB |
-|---|---|---|
-| mAP50 | _TBD_ | _TBD_ |
-| mAP50-95 | _TBD_ | _TBD_ |
-| Inference time per tile | _TBD_ | _TBD_ |
+Same validation (393 tiles, 269 crosswalks), same training budget, and same NMS. The per-tile metric answers whether the tile has any crosswalk, with a confidence threshold of 0.25. Both models use the 6× enriched dataset and AdamW, except in the "without offline *augmentation*" row.
 
-Next steps: _TBD with the Task 4 team._
+| Metric | YOLO11n-OBB | YOLO26n-OBB |
+|---|---|---|
+| mAP50 | 94.7% | **96.2%** |
+| mAP50-95 | 82.1% | **83.7%** |
+| Precision (box) | 86.5% | **88.4%** |
+| Recall (box) | 92.2% | **96.2%** |
+| Per-tile F1 | 85.1% | **94.2%** |
+| mAP50-95 without offline *augmentation* | 79.3% | 79.4% |
+| Parameters | 2.65 M | **2.45 M** |
+| Inference per tile (256 px, T4) | 1.6 ms | **1.4 ms** |
+
+Evolution of the adopted model:
+
+| Step | mAP50-95 | Per-tile F1 |
+|---|---|---|
+| Previous project baseline (DAN058, 25× larger model) | ≈ 72% | — |
+| YOLO26 on the original dataset, 100 epochs | 79.4% | 87.4% |
+| + longer training (≈ 10.4 thousand iterations) | 82.4% | 91.5% |
+| + full offline *augmentation* (same iterations) | **83.7%** | **94.2%** |
+
+With a per-tile recall of 99.4%, the model is already usable for pre-annotating new areas: human review only confirms or adjusts the proposed boxes. In the review of the OSM tiles, 100% of the crossings confirmed by the model were real crosswalks, and the model's box had a median IoU of 0.97 with the corrected box.
+
+Next steps:
+
+- Build the dataset of new sheets (F14, F15, H10, H11) with model pre-annotation and review in X-AnyLabeling.
+- Confirm in full training the gain from automatic hyperparameter search (`model.tune`), which reached an mAP50-95 of 0.787 against 0.735 for the current configuration in short runs.
+- Include hard negatives (zebra-striped areas, striped roofs, parking spots).
+- Annotate the next road marking classes.
+- Measure performance on a full orthophoto of an unseen area and export the vector layer to the IPPUC GIS.

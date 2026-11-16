@@ -8,6 +8,8 @@ const domainKeys = Object.keys(domains) as [keyof typeof domains, ...(keyof type
 const person = z.object({
   name: z.string(),
   github: z.string().optional(),
+  // Profile on another host (e.g. GitLab); takes precedence over `github`.
+  url: z.url().optional(),
   // Set to true once the person agreed to be credited by name.
   confirmed: z.boolean().default(false),
 });
@@ -36,7 +38,7 @@ const projects = defineCollection({
       paused: z.boolean().default(false),
       // Course or program the project belongs to.
       context: z.string().optional(),
-      // Featured projects get a full row in the index; the rest go to the coursework list.
+      // Featured (larger) projects get a full row in the index; the rest go to the smaller-projects list.
       featured: z.boolean().default(true),
       role: z.string(),
       team: z.array(person).default([]),

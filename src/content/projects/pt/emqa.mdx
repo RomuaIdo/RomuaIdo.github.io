@@ -5,7 +5,7 @@ domain: iot
 stack: [ESP32-S3, C++, Arduino, Python, Flask, Vue.js, PrimeVue, EasyEDA]
 start: '2025-05'
 end: '2025-06'
-context: Oficina de Integração 1, Engenharia da Computação, UTFPR
+context: Oficinas de Integração 1, Engenharia da Computação, UTFPR
 role: Software do ESP32 (leitura e calibração dos sensores, bibliotecas próprias, código unificado e envio dos dados ao servidor) e parte do front-end e do back-end.
 team:
   - { name: Felipe Sledz Ferreira, confirmed: true }
@@ -15,6 +15,10 @@ repos:
   - { label: gabriel-arriello/emqa-estacao-qualidade-ambiental, url: 'https://github.com/gabriel-arriello/emqa-estacao-qualidade-ambiental' }
 order: 4
 ---
+
+import station from '../../../assets/projects/emqa/station.jpg';
+import pcb from '../../../assets/projects/emqa/pcb.jpg';
+import dashboard from '../../../assets/projects/emqa/dashboard.png';
 
 ## Contexto e problema
 
@@ -75,9 +79,11 @@ Sem câmara de gás controlada, os coeficientes $a$ e $b$ foram ajustados pelas 
 
 O MAX9814 entrega um sinal analógico proporcional à pressão sonora, com controle automático de ganho, que não corresponde diretamente a decibéis. Foi aplicada uma conversão logarítmica com coeficientes estimados empiricamente contra um medidor de nível sonoro em smartphone.
 
-<MediaPlaceholder what="Foto da EMQA montada e da PCB (frente e verso)" note="Figuras 5 e 7 do artigo da equipe." />
+<Figure src={station} alt="Estação EMQA montada em gabinete plástico transparente sobre suporte de madeira" caption="A EMQA montada no gabinete." />
 
-<MediaPlaceholder what="Captura do dashboard web" note="Figura 6 do artigo." />
+<Figure src={pcb} alt="PCB caseira da EMQA: face de cobre à esquerda e face de componentes com o ESP32-S3 e os sensores à direita" caption="PCB fabricada pela equipe, verso e frente." />
+
+<Figure src={dashboard} alt="Dashboard web com temperatura, umidade, tabela de poluentes com classificação e gráficos por parâmetro" caption="Dashboard em Vue com os índices e gráficos por parâmetro." size="md" />
 
 ## Resultados e próximos passos
 

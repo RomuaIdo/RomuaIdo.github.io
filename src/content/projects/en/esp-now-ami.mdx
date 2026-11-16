@@ -13,6 +13,8 @@ repos:
 order: 10
 ---
 
+import masterUi from '../../../assets/projects/esp-now-ami/master-ui.png';
+
 ## Context and problem
 
 Demonstrate, with real hardware, a line code studied in the course: pseudo-ternary AMI, in which information is carried by pulses of alternating polarity, and not by two fixed levels.
@@ -42,10 +44,10 @@ static uint8_t amiEncode(const uint8_t* bytes, uint8_t byteLen, int8_t* out) {
 }
 ```
 
-The master is an ESP32-S3 SuperMini that only routes between ESP-NOW and Serial. On the PC, each slave's interface shows a waveform preview while the message is typed; the master's shows, per slave, the AMI waveform, the decoded bits, the bytes in hexadecimal, and the encrypted and decrypted message.
+The master is an ESP32-S3 SuperMini that only routes between ESP-NOW and Serial. On the PC, the interfaces imitate a bench instrument. Each slave's interface shows a waveform preview while the message is typed. The master's has one channel per slave with the AMI waveform, a cursor for bit-by-bit measurement, the count of marks at $+V$ and $-V$ and of spaces at $0$ V, the DC level, code violations (two consecutive marks with the same polarity), and a byte-by-byte table with text, hexadecimal, key, cipher, and binary.
 
-<MediaPlaceholder what="Screenshot of the master interface with the waveforms of the two slaves" />
+<Figure src={masterUi} alt="Master interface with two channels, one per slave, each with the AMI oscilloscope, the measurements, and the byte-by-byte table" caption="Master interface, one channel per slave." />
 
 ## Results and next steps
 
-System working with one master and two slaves, with real-time visualization. A natural extension is to detect code violations (two consecutive zeros with the same polarity) at the receiver.
+System working with one master and two slaves, with real-time visualization. The master interface already measures the DC level and flags code violations, which lets the AMI properties studied in the course be checked on screen.

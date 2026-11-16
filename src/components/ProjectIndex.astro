@@ -33,6 +33,7 @@ const t = useTranslations(lang);
               {p.data.title}
             </a>
             <p class="summary">{p.data.summary}</p>
+            {p.data.context && <p class="context">{p.data.context}</p>}
           </th>
           <td>
             <DomainTag lang={lang} domain={p.data.domain} />
@@ -103,6 +104,12 @@ const t = useTranslations(lang);
     max-width: 52ch;
   }
 
+  .context {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
   .year {
     text-align: right;
     padding-right: 0;
@@ -126,7 +133,13 @@ const t = useTranslations(lang);
     tbody th {
       grid-column: 1 / -1;
     }
-    .year {
+    .context {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .year {
       grid-row: 2;
       grid-column: 2;
     }

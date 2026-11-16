@@ -5,6 +5,7 @@ domain: software
 stack: [React 19, TypeScript, Vite, React Router, Java 17, Spring Boot 3]
 start: '2026-05'
 end: '2026-06'
+context: Análise e Projeto de Sistemas, UTFPR
 role: Arquitetura do back-end e do front-end e parte da codificação — hierarquia de papéis, cobertura dos casos de uso, dashboard por papel e mapa de calor de disponibilidade.
 team:
   - { name: Arthur G. P. Heberle, github: Arthur-Heberle, confirmed: true }
@@ -14,6 +15,9 @@ repos:
   - { label: Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais, url: 'https://github.com/Arthur-Heberle/SOL-Sistema-de-Ocupacao-de-Locais' }
 order: 5
 ---
+
+import roomMap from '../../../assets/projects/sol/room-map.png';
+import heatmap from '../../../assets/projects/sol/availability-heatmap.png';
 
 ## Contexto e problema
 
@@ -48,9 +52,9 @@ Fui responsável pela arquitetura do back-end e do front-end, incluindo a separa
 - Mapa de calor da disponibilidade do grupo, cruzando os horários livres informados pelos membros de um projeto.
 - Ajustes no modal de reserva (data e hora separadas) e uma migração do banco simulado que adiciona novos usuários de teste sem apagar os dados já salvos no navegador.
 
-<MediaPlaceholder what="Captura do mapa de salas com filtro e modal de reserva" />
+<Figure src={roomMap} alt="Mapa de salas com filtros de data, bloco e tipo e o modal de reserva da sala A-101 aberto" caption="Mapa de salas com o modal de reserva." />
 
-<MediaPlaceholder what="Captura do mapa de calor de disponibilidade de um projeto" />
+<Figure src={heatmap} alt="Grade de disponibilidade individual ao lado do mapa de calor do grupo, com os melhores horários destacados" caption="Disponibilidade individual e mapa de calor do grupo." />
 
 ## Resultados e próximos passos
 

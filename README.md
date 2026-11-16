@@ -15,6 +15,7 @@ Source of Vinícius Romualdo Silva's portfolio, published at https://romuaido.gi
 
 ```
 src/
+├── assets/          # images: projects/<slug>/ and bench/<slug>/
 ├── config/
 │   ├── site.ts          # personal data, GitHub handle and contact links (edit here)
 │   └── domains.ts       # project domains and channel colors
@@ -49,10 +50,10 @@ Add an MDX file to `src/content/projects/pt/` and/or `src/content/projects/en/`.
 | `start` | yes | start month, `YYYY-MM` |
 | `end` | no | expected or actual end month, `YYYY-MM`; omit for open-ended work |
 | `paused` | no | boolean, default `false` |
-| `featured` | no | boolean, default `true`; `false` lists the project in the compact "Coursework" section instead of the main index |
-| `context` | no | course or program |
+| `featured` | no | boolean, default `true`; `false` lists the project in the compact "Smaller projects" section (pt: "Projetos menores") instead of the main index. The split is by project scale, not by whether it was coursework |
+| `context` | no | course or program; shown in the index for main case studies too |
 | `role` | yes | |
-| `team` | yes | list of `{ name, github?, confirmed }` |
+| `team` | yes | list of `{ name, github?, url?, confirmed }`; `url` is a profile on another host (e.g. GitLab) and takes precedence over `github` for the link |
 | `repos` | yes | list of `{ label, url }` |
 | `cover` | no | image path |
 | `coverAlt` | no | alt text for the cover |
@@ -72,7 +73,23 @@ The body must use these sections, in order:
 3. Implementation
 4. Results and next steps
 
-For media that does not exist yet, use the `<MediaPlaceholder>` component. For images, use the `<Figure>` component, which renders WebP with `loading="lazy"`. A case study or bench page can import images from `src/assets/` inside its MDX and render them with `<Figure src={...} alt="..." />`.
+For media that does not exist yet, use the `<MediaPlaceholder>` component. For images, use the `<Figure>` component, which renders WebP with `loading="lazy"`. Its `size` prop caps the width: `'sm'` (max ~20rem, for tall diagrams), `'md'` (max ~28rem, for tall page captures) or `'full'` (default).
+
+### Images
+
+Images live in `src/assets/projects/<slug>/` (case studies) and `src/assets/bench/<slug>/` (bench logs). Import them at the top of the MDX body and render them with `<Figure>`:
+
+```mdx
+import board from '../../../assets/bench/stlink-ldo/board.jpg';
+
+<Figure src={board} size="md" alt="..." />
+```
+
+Strip metadata and downscale before committing, e.g.:
+
+```sh
+magick in.jpg -auto-orient -strip -resize '2000x2000>' out.jpg
+```
 
 ## Commands
 

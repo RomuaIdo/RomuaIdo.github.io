@@ -2,64 +2,110 @@
 title: Mapeamento urbano de sinalização viária
 summary: Pipeline de detecção orientada (OBB) de sinalização horizontal e elementos urbanos em ortofotos aéreas de alta resolução de Curitiba, em parceria com o IPPUC.
 domain: vision
-stack: [Python, YOLO11-OBB, YOLO26-OBB, Ultralytics, rasterio, geopandas, X-AnyLabeling]
+stack: [Python, YOLO26-OBB, YOLO11-OBB, Ultralytics, rasterio, geopandas, X-AnyLabeling, OpenStreetMap]
 start: '2026-06'
 end: '2026-12'
 context: AP[x], projeto de extensão UTFPR + IPPUC, Task 4
-role: Levantamento de estudos e estruturação de treinos, testes e técnicas para aprimorar o modelo de visão computacional (YOLO26-OBB).
-team: []
+role: Evolução do modelo — levantamento de estudos, estruturação dos ciclos de treino e teste, comparação YOLO11 × YOLO26, augmentation, OSM como pré-anotação e tuning.
+team:
+  - { name: Omar Zagonel El Laden, url: 'https://gitlab.com/omarelladen', confirmed: true }
+  - { name: Chan Hong Lik, confirmed: true }
+  - { name: Nicolas Almeida de Paula, confirmed: true }
 repos: []
 order: 2
 ---
 
-{/* TODO: add team names and repository link once cleared for publication. */}
+import detection from '../../../assets/projects/mapeamento-ippuc/detection.png';
+import annotation from '../../../assets/projects/mapeamento-ippuc/annotation.png';
 
 ## Contexto e problema
 
-O Instituto de Pesquisa e Planejamento Urbano de Curitiba (IPPUC) mantém ortofotos aéreas de alta resolução da cidade. Inventariar a sinalização horizontal (faixas de pedestre, setas, linhas de retenção) e outros elementos urbanos a partir dessas imagens é um trabalho manual e lento. A Task 4 do AP[x] investiga um pipeline de detecção automática que produza camadas georreferenciadas utilizáveis pelo planejamento urbano.
+O Instituto de Pesquisa e Planejamento Urbano de Curitiba (IPPUC) mantém ortofotos aéreas de alta resolução da cidade. Inventariar a sinalização horizontal (faixas de pedestre, setas, linhas de retenção) e outros elementos urbanos a partir dessas imagens é um trabalho manual e lento. A Task 4 do AP[x] investiga um pipeline de detecção automática que gere camadas georreferenciadas para o planejamento urbano.
 
 ## Arquitetura e decisões técnicas
 
 ```ascii title="Pipeline"
- ortofoto (GeoTIFF)
+ ortofoto (GeoTIFF, 8 cm/px, EPSG:31982)
         |
         v
- recorte em tiles  ----------------->  anotação OBB (X-AnyLabeling)
- (rasterio)                                     |
-        |                                       v
-        |                            treino YOLO11-OBB / YOLO26-OBB
-        v                                       |
- inferência por tile  <-------------------------+
+ máscara de arruamento + tiles  -------->  pré-anotação (modelo + OSM)
+ (rasterio)                                          |
+        |                                            v
+        |                                  revisão OBB (X-AnyLabeling)
+        |                                            |
+        |                                            v
+        |                                  treino YOLO11-OBB / YOLO26-OBB
+        v                                            |
+ inferência por tile  <------------------------------+
         |
         v
  caixas em pixels --> coordenadas do mapa (transform do raster)
         |
         v
- camada vetorial (geopandas) --> GIS do IPPUC
+ camada vetorial (geopandas, GeoPackage) --> GIS do IPPUC
 ```
 
-**Caixas orientadas (OBB) em vez de alinhadas ao eixo.** Faixas e setas aparecem em qualquer ângulo, acompanhando a direção das vias. Uma caixa alinhada ao eixo em torno de uma faixa diagonal engloba muito asfalto e se sobrepõe às vizinhas; a caixa orientada descreve o objeto com quatro vértices e um ângulo.
+**Caixas orientadas (OBB) em vez de alinhadas ao eixo.** Faixas e setas aparecem em qualquer ângulo, seguindo a direção das vias. Em volta de uma faixa diagonal, uma caixa alinhada ao eixo engloba muito asfalto e se sobrepõe às vizinhas. A caixa orientada descreve o objeto com quatro vértices e um ângulo.
 
-**Comparação entre gerações do YOLO.** YOLO11-OBB e YOLO26-OBB foram avaliados sobre o mesmo conjunto anotado, para escolher pelo resultado medido e não pela versão mais nova. O YOLO26-OBB foi adotado como modelo do projeto.
+**Comparação entre gerações do YOLO.** YOLO11-OBB e YOLO26-OBB foram avaliados no mesmo conjunto anotado, com a mesma validação fixa, para escolher pelo resultado medido e não pela versão mais nova. O projeto adotou o YOLO26-OBB: empata com o YOLO11 no dataset original, aproveita melhor o *data augmentation* e é mais leve.
 
-**Georreferenciamento no fim do pipeline.** A rede trabalha em coordenadas de pixel de cada tile; a conversão para coordenadas do mapa usa a transformação afim do próprio raster (`rasterio`), e as geometrias resultantes são montadas com `geopandas`.
+**Georreferenciamento no fim do pipeline.** A rede trabalha em coordenadas de pixel de cada tile. A conversão para coordenadas do mapa usa a transformação afim do raster (`rasterio`, SIRGAS 2000 / UTM 22S), e as geometrias são montadas com `geopandas` em GeoPackage.
+
+**OpenStreetMap como pré-anotação, não como rótulo.** As travessias do OSM indicam onde procurar, o modelo propõe as caixas e uma pessoa revisa no X-AnyLabeling. Usado como rótulo direto, o OSM piorou o detector.
 
 ## Implementação
 
 Minha responsabilidade na Task 4 é a evolução do modelo: levantar estudos sobre detecção orientada em imagens aéreas, estruturar os ciclos de treino e teste e avaliar técnicas que melhorem o desempenho do YOLO26-OBB sobre as ortofotos.
 
-<MediaPlaceholder what="Exemplo de detecções OBB sobre um recorte de ortofoto" note="Não publicar ortofotos nem detecções reais sem confirmação de permissão do IPPUC." />
+| Item | Valor |
+|---|---|
+| Resolução da ortofoto | 8 cm por pixel |
+| Tile de treino | 256 × 256 px RGB (≈ 20 × 20 m), com a máscara de arruamento (quadras em preto) |
+| Tiles dos novos lotes | 500 × 500 px (40 × 40 m), passo de 372 px (128 px de sobreposição entre vizinhos) |
+| Classe treinada | faixa de pedestre (`ftp-1` nos novos lotes de anotação) |
+| Classes propostas | setas, inscrições, linhas de retenção, linhas de pista, vagas |
+| Dataset base | 1.106 tiles de treino (840 com faixa, 266 sem) e 393 de validação (164 com faixa, 229 sem, 269 faixas) |
+| Faixa cortada pela borda | vira o retângulo alinhado ao eixo da parte que fica dentro do tile |
+| Modelo adotado | `yolo26n-obb` (2,45 M de parâmetros), AdamW, lr 0,002, *batch* 64, ≈ 10,4 mil iterações |
+| *Augmentation* offline | dataset enriquecido 6× (espelhamentos, rotações de 90° e 270° e uma variante fotométrica por tile) |
+| Ambiente de treino | Google Colab, Tesla T4, Ultralytics 8.4.163 |
 
-<MediaPlaceholder what="Exemplo de anotação no X-AnyLabeling" note="Usar recorte autorizado ou imagem sintética." />
+**Bordas entre tiles.** Os tiles de treino não se sobrepõem, então uma faixa cortada pela borda aparece em dois tiles, e em cada um a caixa é recortada à parte visível. Nos novos lotes de inferência, os 128 px de sobreposição garantem que toda faixa apareça inteira em pelo menos um tile.
 
-_Detalhes de implementação (tamanho dos tiles, classes anotadas, tratamento de bordas entre tiles) a serem adicionados após confirmação do que pode ser publicado._
+<Figure src={annotation} alt="Cruzamento em ortofoto com as quadras mascaradas em preto e caixas orientadas sobre as faixas de pedestre no X-AnyLabeling" caption="Revisão de caixas orientadas no X-AnyLabeling, com a máscara de arruamento aplicada." size="md" />
+
+<Figure src={detection} alt="Tile de 256 px com uma caixa orientada sobre uma faixa de pedestre e confiança de 0,91" caption="Detecção do YOLO26-OBB em um tile de 256 px." size="sm" />
 
 ## Resultados e próximos passos
 
-| Métrica | YOLO11-OBB | YOLO26-OBB |
-|---|---|---|
-| mAP50 | _a definir_ | _a definir_ |
-| mAP50-95 | _a definir_ | _a definir_ |
-| Tempo de inferência por tile | _a definir_ | _a definir_ |
+Mesma validação (393 tiles, 269 faixas), mesmo orçamento de treino e mesmo NMS. A métrica por tile responde se o tile tem alguma faixa, com limiar de confiança de 0,25. Os dois modelos usam o dataset enriquecido 6× e AdamW, exceto na linha “sem *augmentation* offline”.
 
-Próximos passos: _a definir com a equipe da Task 4._
+| Métrica | YOLO11n-OBB | YOLO26n-OBB |
+|---|---|---|
+| mAP50 | 94,7% | **96,2%** |
+| mAP50-95 | 82,1% | **83,7%** |
+| Precisão (caixa) | 86,5% | **88,4%** |
+| Recall (caixa) | 92,2% | **96,2%** |
+| F1 por tile | 85,1% | **94,2%** |
+| mAP50-95 sem *augmentation* offline | 79,3% | 79,4% |
+| Parâmetros | 2,65 M | **2,45 M** |
+| Inferência por tile (256 px, T4) | 1,6 ms | **1,4 ms** |
+
+Evolução do modelo adotado:
+
+| Etapa | mAP50-95 | F1 por tile |
+|---|---|---|
+| Referência do projeto anterior (DAN058, modelo 25× maior) | ≈ 72% | — |
+| YOLO26 no dataset original, 100 épocas | 79,4% | 87,4% |
+| + treinar mais (≈ 10,4 mil iterações) | 82,4% | 91,5% |
+| + *augmentation* offline completo (mesmas iterações) | **83,7%** | **94,2%** |
+
+Com recall de 99,4% por tile, o modelo já serve para pré-anotar novas áreas: a revisão humana só confirma ou ajusta as caixas propostas. Na revisão dos tiles do OSM, 100% das travessias confirmadas pelo modelo eram faixas reais, e a caixa do modelo tinha IoU mediano de 0,97 com a caixa corrigida.
+
+Próximos passos:
+
+- Montar o dataset de novas folhas (F14, F15, H10, H11) com pré-anotação do modelo e revisão no X-AnyLabeling.
+- Confirmar no treino completo o ganho da busca automática de hiperparâmetros (`model.tune`), que chegou a mAP50-95 de 0,787 contra 0,735 da configuração atual em treinos curtos.
+- Incluir negativos difíceis (áreas zebradas, telhados listrados, vagas).
+- Anotar as próximas classes de sinalização horizontal.
+- Medir o desempenho em ortofoto inteira de área não vista e exportar a camada vetorial para o GIS do IPPUC.
